@@ -24,27 +24,27 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 - Authentication migration `drizzle/0001_empty_energizer.sql` was applied to the verified Neon development branch after explicit approval. Read-only verification confirmed the `auth.account`, `auth.session`, `auth.user`, and `auth.verification` tables and two Drizzle migration journal entries.
 - The first administrator was provisioned on development after explicit approval using the operator-only command at `scripts/provision-first-admin.ts`. Read-only verification confirmed one auth user, one credential account, one matching active `admins` allow-list record, and no session. The command uses an interactive hidden password prompt and Better Auth's password hashing.
 - Administrator sign-in UI exists at `/admin/sign-in`. A small `/admin` landing page calls `requireAdmin()` on the server and supports sign-out. Authorization tests cover missing sessions, missing allow-list records, inactive admins, and active admins. HTTP smoke checks confirmed anonymous `/admin` redirects to sign-in, the sign-in page loads, and public sign-up remains closed. The administrator confirmed a successful sign-in and sign-out with the private credential.
+- `/admin` now provides a read-only dashboard with publication counts, new and in-progress enquiry counts, applications awaiting review, and the five latest open enquiries and applications. The data operation calls `requireAdmin()` before any dashboard query. Read-only development queries, anonymous redirect, lint, TypeScript, authorization tests, and the Webpack build passed. Listing and enquiry management actions are later tasks.
 
 ## Security and compatibility review
 
 - Completed on 3 November 2026: Next.js and `eslint-config-next` were updated from 16.4.0 to 16.4.4. The critical Next.js audit finding cleared; 22 moderate dependency findings remained.
 - No direct Zod API imports were found under `src`; lint, TypeScript, and the Webpack production build passed with Zod 4.6.7. Zod-based application validation has not been implemented yet.
-- The session hook will reject sign-in until an auth identity has a matching active `admins` record. First-admin provisioning needs a reviewed operator-only process.
+- The session hook rejects sign-in unless the auth identity has a matching active `admins` record. The first administrator was provisioned through the operator-only process.
 - Turbopack production build still fails when its PostCSS worker tries to bind a local port (`Operation not permitted`). The sandboxed build also cannot fetch the existing Google font. Recheck Turbopack in deployment CI.
 
 ## Progress
 
-- **Last completed task:** Built administrator sign-in and authorization tests; the administrator confirmed sign-in and sign-out with the private credential.
-- **Current task:** Awaiting the next development instruction; no implementation is in progress.
+- **Last completed task:** Built and checked the protected read-only administrator dashboard.
+- **Current task:** Awaiting administrator visual review and the next development instruction.
 - **Known blockers:** Turbopack build is blocked by the local worker port restriction.
-- **Next recommended task:** Build the protected administrator dashboard.
+- **Next recommended task:** Build the database-backed architectural plan catalogue and its administrator management flow.
 
 ## Remaining development
 
-1. Build the protected administrator dashboard.
-2. Build the architectural plan catalogue.
-3. Build the professional directory and applications.
-4. Build enquiry submission and management.
-5. Complete testing, SEO, and production launch preparation.
+1. Build the architectural plan catalogue and administrator management flow.
+2. Build the professional directory and applications.
+3. Build enquiry submission and management.
+4. Complete testing, SEO, and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.
