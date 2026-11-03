@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:auth": "node --conditions=react-server --import=tsx --test tests/admin-authorization.test.ts",
+    "test:plans": "node --import=tsx --test tests/plan-input.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "node --conditions=react-server --import=tsx scripts/check-db.ts",

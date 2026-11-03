@@ -25,6 +25,8 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 - The first administrator was provisioned on development after explicit approval using the operator-only command at `scripts/provision-first-admin.ts`. Read-only verification confirmed one auth user, one credential account, one matching active `admins` allow-list record, and no session. The command uses an interactive hidden password prompt and Better Auth's password hashing.
 - Administrator sign-in UI exists at `/admin/sign-in`. A small `/admin` landing page calls `requireAdmin()` on the server and supports sign-out. Authorization tests cover missing sessions, missing allow-list records, inactive admins, and active admins. HTTP smoke checks confirmed anonymous `/admin` redirects to sign-in, the sign-in page loads, and public sign-up remains closed. The administrator confirmed a successful sign-in and sign-out with the private credential.
 - `/admin` now provides a read-only dashboard with publication counts, new and in-progress enquiry counts, applications awaiting review, and the five latest open enquiries and applications. The data operation calls `requireAdmin()` before any dashboard query. Read-only development queries, anonymous redirect, lint, TypeScript, authorization tests, and the Webpack build passed. Listing and enquiry management actions are later tasks.
+- The architectural plan catalogue is implemented at `/plans` and `/plans/[slug]`. Public queries return published listings only; unknown or unpublished slugs return 404. The administrator can create drafts, edit listings and cover images, and set draft, published, or archived status through `/admin/plans`. Every protected read and write checks the current session and active `admins` record. Plan and cover changes use one transaction. Publishing requires a described HTTPS cover image. No plan write or migration was executed during this task.
+- Plan input tests, lint, TypeScript, and the Webpack production build passed. A read-only development connection check passed. HTTP smoke checks returned 200 for `/plans`, 404 for an unknown plan, and a sign-in redirect for anonymous `/admin/plans`. Authenticated create, edit, and publish flows still need an approved development database write test.
 
 ## Security and compatibility review
 
@@ -35,16 +37,17 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 ## Progress
 
-- **Last completed task:** Built and checked the protected read-only administrator dashboard.
-- **Current task:** Awaiting administrator visual review and the next development instruction.
+- **Last completed task:** Implemented and checked the plan catalogue and administrator plan management code without database writes.
+- **Current task:** Awaiting approval for an authenticated plan create, edit, and publish test on development.
 - **Known blockers:** Turbopack build is blocked by the local worker port restriction.
-- **Next recommended task:** Build the database-backed architectural plan catalogue and its administrator management flow.
+- **Next recommended task:** Exercise plan management on the development branch, then build the professional directory and applications.
 
 ## Remaining development
 
-1. Build the architectural plan catalogue and administrator management flow.
+1. Verify authenticated plan create, edit, and publication on development after approval.
 2. Build the professional directory and applications.
 3. Build enquiry submission and management.
-4. Complete testing, SEO, and production launch preparation.
+4. Replace remaining mocked landing page marketplace cards and out-of-scope marketing claims.
+5. Complete testing, SEO, and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.

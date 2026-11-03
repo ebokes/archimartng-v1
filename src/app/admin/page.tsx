@@ -128,6 +128,15 @@ export default async function AdminPage() {
           ))}
         </section>
 
+        <div className="mt-8">
+          <Link
+            href="/admin/plans"
+            className="inline-flex rounded-lg bg-navy px-5 py-3 text-sm font-semibold text-navy-foreground hover:opacity-90"
+          >
+            Manage plans →
+          </Link>
+        </div>
+
         <div className="mt-12 grid gap-10 xl:grid-cols-2">
           <section aria-labelledby="recent-enquiries-heading">
             <div className="mb-5 flex items-baseline justify-between gap-4">
