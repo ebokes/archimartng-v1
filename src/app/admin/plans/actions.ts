@@ -101,13 +101,20 @@ export async function updatePlan(
   if (isError(input)) return input
 
   try {
-    const updated = await authDb.transaction(async (tx) => {
+    const outcome = await authDb.transaction(async (tx) => {
       const [existing] = await tx
         .select({ publicationStatus: plans.publicationStatus })
         .from(plans)
         .where(eq(plans.id, id))
         .limit(1)
-      if (!existing) return false
+      if (!existing) return { error: 'Plan no longer exists.' }
+      const [cover] = await tx
+        .select({ id: planImages.id })
+        .from(planImages)
+        .where(and(eq(planImages.planId, id), eq(planImages.isCover, true)))
+        .limit(1)
+      if (cover && !input.coverUrl)
+        return { error: 'Replace the cover URL with another HTTPS image.' }
       await tx
         .update(plans)
         .set({
@@ -121,11 +128,6 @@ export async function updatePlan(
         })
         .where(eq(plans.id, id))
       if (input.coverUrl) {
-        const [cover] = await tx
-          .select({ id: planImages.id })
-          .from(planImages)
-          .where(and(eq(planImages.planId, id), eq(planImages.isCover, true)))
-          .limit(1)
         if (cover) {
           await tx
             .update(planImages)
@@ -141,9 +143,9 @@ export async function updatePlan(
           })
         }
       }
-      return true
+      return { error: null }
     })
-    if (!updated) return { error: 'Plan no longer exists.' }
+    if (outcome.error) return outcome
   } catch (error) {
     return writeError(error)
   }

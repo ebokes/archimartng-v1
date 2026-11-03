@@ -179,7 +179,8 @@ export function PlanForm({
       <div className="border-t border-border pt-7">
         <h2 className="text-lg font-semibold">Cover image</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Use an HTTPS image URL. A cover is required before publication.
+          Use an HTTPS image URL. A cover is required before publication. To
+          change an existing cover, enter a replacement URL.
         </p>
         <div className="mt-5 grid gap-6 sm:grid-cols-2">
           <label className={label}>
