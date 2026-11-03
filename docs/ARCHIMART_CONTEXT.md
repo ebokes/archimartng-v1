@@ -21,7 +21,8 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 - Previous work verified development database connectivity and application of `drizzle/0000_round_maestro.sql` to development. This documentation task did not reconnect to the database. The schema defines seven application tables: `admins`, `plans`, `plan_images`, `professionals`, `professional_applications`, `enquiries`, and `enquiry_notes`.
 - The repository contains the Better Auth configuration, authentication schema, route handler, transactional PostgreSQL connection, and `requireAdmin()` helper. `disableSignUp: true` and the disabled sign-up path close public email/password registration. Session creation and `requireAdmin()` check the active `admins` allow-list.
-- Authentication migration `drizzle/0001_empty_energizer.sql` is generated and reviewed. It creates an `auth` schema with four auth tables, foreign keys, and indexes. Per the prior handover, it is **not applied**. No administrator provisioning path or sign-in UI has been implemented.
+- Authentication migration `drizzle/0001_empty_energizer.sql` was applied to the verified Neon development branch after explicit approval. Read-only verification confirmed the `auth.account`, `auth.session`, `auth.user`, and `auth.verification` tables and two Drizzle migration journal entries.
+- The first administrator was provisioned on development after explicit approval using the operator-only command at `scripts/provision-first-admin.ts`. Read-only verification confirmed one auth user, one credential account, one matching active `admins` allow-list record, and no session. The command uses an interactive hidden password prompt and Better Auth's password hashing. No sign-in UI exists yet.
 
 ## Security and compatibility review
 
@@ -32,20 +33,18 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 ## Progress
 
-- **Last completed task:** Updated and verified persistent project context in `AGENTS.md` and this file. The preceding task completed the security and compatibility review.
-- **Current task:** Awaiting approval for the next development task; no implementation is in progress.
-- **Known blockers:** Authentication migration awaits explicit approval for development; no administrator provisioning path exists; Turbopack build is blocked by the local worker port restriction.
-- **Next recommended task:** After explicit approval, apply the reviewed authentication migration to the verified development branch. Then design administrator provisioning and authorization tests.
+- **Last completed task:** Provisioned and verified the first administrator on the Neon development branch.
+- **Current task:** Awaiting the next development instruction; no implementation is in progress.
+- **Known blockers:** No sign-in UI exists; Turbopack build is blocked by the local worker port restriction.
+- **Next recommended task:** Build administrator sign-in and test authorization on every protected server operation.
 
 ## Remaining development
 
-1. Apply the reviewed authentication migration to development after approval.
-2. Implement administrator provisioning.
-3. Build administrator sign-in and authorization tests.
-4. Build the protected administrator dashboard.
-5. Build the architectural plan catalogue.
-6. Build the professional directory and applications.
-7. Build enquiry submission and management.
-8. Complete testing, SEO, and production launch preparation.
+1. Build administrator sign-in and authorization tests.
+2. Build the protected administrator dashboard.
+3. Build the architectural plan catalogue.
+4. Build the professional directory and applications.
+5. Build enquiry submission and management.
+6. Complete testing, SEO, and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.
