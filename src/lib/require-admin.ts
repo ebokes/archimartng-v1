@@ -1,28 +1,21 @@
 import 'server-only'
 
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { db } from '@/db'
 import { admins } from '@/db/schema'
+import { authorizeAdmin } from './admin-authorization'
 import { auth } from './auth'
 
 export async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
-  const authSubject = session?.user?.id
+  return authorizeAdmin(session?.user?.id, async (authSubject) => {
+    const [admin] = await db
+      .select()
+      .from(admins)
+      .where(eq(admins.authSubject, authSubject))
+      .limit(1)
 
-  if (!authSubject) {
-    throw new Error('Unauthorized')
-  }
-
-  const [admin] = await db
-    .select()
-    .from(admins)
-    .where(and(eq(admins.authSubject, authSubject), eq(admins.isActive, true)))
-    .limit(1)
-
-  if (!admin) {
-    throw new Error('Forbidden')
-  }
-
-  return admin
+    return admin
+  })
 }

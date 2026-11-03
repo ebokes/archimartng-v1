@@ -22,7 +22,8 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 - Previous work verified development database connectivity and application of `drizzle/0000_round_maestro.sql` to development. This documentation task did not reconnect to the database. The schema defines seven application tables: `admins`, `plans`, `plan_images`, `professionals`, `professional_applications`, `enquiries`, and `enquiry_notes`.
 - The repository contains the Better Auth configuration, authentication schema, route handler, transactional PostgreSQL connection, and `requireAdmin()` helper. `disableSignUp: true` and the disabled sign-up path close public email/password registration. Session creation and `requireAdmin()` check the active `admins` allow-list.
 - Authentication migration `drizzle/0001_empty_energizer.sql` was applied to the verified Neon development branch after explicit approval. Read-only verification confirmed the `auth.account`, `auth.session`, `auth.user`, and `auth.verification` tables and two Drizzle migration journal entries.
-- The first administrator was provisioned on development after explicit approval using the operator-only command at `scripts/provision-first-admin.ts`. Read-only verification confirmed one auth user, one credential account, one matching active `admins` allow-list record, and no session. The command uses an interactive hidden password prompt and Better Auth's password hashing. No sign-in UI exists yet.
+- The first administrator was provisioned on development after explicit approval using the operator-only command at `scripts/provision-first-admin.ts`. Read-only verification confirmed one auth user, one credential account, one matching active `admins` allow-list record, and no session. The command uses an interactive hidden password prompt and Better Auth's password hashing.
+- Administrator sign-in UI exists at `/admin/sign-in`. A small `/admin` landing page calls `requireAdmin()` on the server and supports sign-out. Authorization tests cover missing sessions, missing allow-list records, inactive admins, and active admins. HTTP smoke checks confirmed anonymous `/admin` redirects to sign-in, the sign-in page loads, and public sign-up remains closed. The administrator confirmed a successful sign-in and sign-out with the private credential.
 
 ## Security and compatibility review
 
@@ -33,18 +34,17 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 ## Progress
 
-- **Last completed task:** Provisioned and verified the first administrator on the Neon development branch.
+- **Last completed task:** Built administrator sign-in and authorization tests; the administrator confirmed sign-in and sign-out with the private credential.
 - **Current task:** Awaiting the next development instruction; no implementation is in progress.
-- **Known blockers:** No sign-in UI exists; Turbopack build is blocked by the local worker port restriction.
-- **Next recommended task:** Build administrator sign-in and test authorization on every protected server operation.
+- **Known blockers:** Turbopack build is blocked by the local worker port restriction.
+- **Next recommended task:** Build the protected administrator dashboard.
 
 ## Remaining development
 
-1. Build administrator sign-in and authorization tests.
-2. Build the protected administrator dashboard.
-3. Build the architectural plan catalogue.
-4. Build the professional directory and applications.
-5. Build enquiry submission and management.
-6. Complete testing, SEO, and production launch preparation.
+1. Build the protected administrator dashboard.
+2. Build the architectural plan catalogue.
+3. Build the professional directory and applications.
+4. Build enquiry submission and management.
+5. Complete testing, SEO, and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.
