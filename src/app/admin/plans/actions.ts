@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { authDb } from '@/db/auth-client'
 import { planImages, plans } from '@/db/schema'
+import { discardPlanImage, uploadPlanImage } from '@/lib/plan-image-storage'
 import { parsePlanForm, type PlanInput } from '@/lib/plan-input'
 import { requireAdmin } from '@/lib/require-admin'
 
@@ -53,6 +54,29 @@ function writeError(error: unknown): PlanActionState {
   throw error
 }
 
+type CoverResult = { error: string } | { url: string; key: string | null }
+
+async function coverFromForm(
+  formData: FormData,
+  input: PlanInput,
+): Promise<CoverResult> {
+  const file = formData.get('coverFile')
+  if (file !== null && !(file instanceof File))
+    return { error: 'Choose a valid image file.' }
+  if (file instanceof File && file.size > 0) {
+    if (input.coverUrl)
+      return { error: 'Choose either an image URL or an upload.' }
+    try {
+      return await uploadPlanImage(file)
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Image upload failed.',
+      }
+    }
+  }
+  return { url: input.coverUrl, key: null }
+}
+
 export async function createPlan(
   _state: PlanActionState,
   formData: FormData,
@@ -60,6 +84,8 @@ export async function createPlan(
   const admin = await requireAdmin()
   const input = parse(formData)
   if (isError(input)) return input
+  const coverImage = await coverFromForm(formData, input)
+  if ('error' in coverImage) return coverImage
 
   try {
     await authDb.transaction(async (tx) => {
@@ -72,16 +98,17 @@ export async function createPlan(
           createdByAdminId: admin.id,
         })
         .returning({ id: plans.id })
-      if (input.coverUrl)
+      if (coverImage.url)
         await tx.insert(planImages).values({
           planId: plan.id,
-          imageUrl: input.coverUrl,
+          imageUrl: coverImage.url,
           altText: input.coverAlt,
           isCover: true,
           sortOrder: 0,
         })
     })
   } catch (error) {
+    if (coverImage.key) await discardPlanImage(coverImage.key)
     return writeError(error)
   }
 
@@ -99,6 +126,8 @@ export async function updatePlan(
   await requireAdmin()
   const input = parse(formData)
   if (isError(input)) return input
+  const coverImage = await coverFromForm(formData, input)
+  if ('error' in coverImage) return coverImage
 
   try {
     const outcome = await authDb.transaction(async (tx) => {
@@ -113,8 +142,8 @@ export async function updatePlan(
         .from(planImages)
         .where(and(eq(planImages.planId, id), eq(planImages.isCover, true)))
         .limit(1)
-      if (cover && !input.coverUrl)
-        return { error: 'Replace the cover URL with another HTTPS image.' }
+      if (cover && !coverImage.url)
+        return { error: 'Replace the cover with another image URL or upload.' }
       await tx
         .update(plans)
         .set({
@@ -127,16 +156,16 @@ export async function updatePlan(
               : null,
         })
         .where(eq(plans.id, id))
-      if (input.coverUrl) {
+      if (coverImage.url) {
         if (cover) {
           await tx
             .update(planImages)
-            .set({ imageUrl: input.coverUrl, altText: input.coverAlt })
+            .set({ imageUrl: coverImage.url, altText: input.coverAlt })
             .where(eq(planImages.id, cover.id))
         } else {
           await tx.insert(planImages).values({
             planId: id,
-            imageUrl: input.coverUrl,
+            imageUrl: coverImage.url,
             altText: input.coverAlt,
             isCover: true,
             sortOrder: 0,
@@ -145,8 +174,12 @@ export async function updatePlan(
       }
       return { error: null }
     })
-    if (outcome.error) return outcome
+    if (outcome.error) {
+      if (coverImage.key) await discardPlanImage(coverImage.key)
+      return outcome
+    }
   } catch (error) {
+    if (coverImage.key) await discardPlanImage(coverImage.key)
     return writeError(error)
   }
 

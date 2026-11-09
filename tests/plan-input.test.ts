@@ -24,13 +24,35 @@ function form(overrides: Record<string, string> = {}) {
   return data
 }
 
-test('publishing requires a described HTTPS cover image', () => {
+test('publishing requires a described image cover', () => {
   assert.equal(parsePlanForm(form({ coverUrl: '' })).success, false)
   assert.equal(parsePlanForm(form({ coverAlt: '' })).success, false)
   assert.equal(
     parsePlanForm(form({ coverUrl: 'http://example.com/a.jpg' })).success,
     false,
   )
+})
+
+test('a locally hosted plan image can be used as a cover', () => {
+  assert.equal(
+    parsePlanForm(form({ coverUrl: '/plan-images/example.webp' })).success,
+    true,
+  )
+  assert.equal(
+    parsePlanForm(form({ coverUrl: '/plan-images/../secret.jpg' })).success,
+    false,
+  )
+})
+
+test('a selected upload can satisfy the published cover requirement', () => {
+  const data = form({ coverUrl: '' })
+  data.set(
+    'coverFile',
+    new File(['image bytes'], 'plan.png', { type: 'image/png' }),
+  )
+  assert.equal(parsePlanForm(data).success, true)
+  data.set('coverAlt', '')
+  assert.equal(parsePlanForm(data).success, false)
 })
 
 test('drafts can omit the cover and optional dimensions', () => {

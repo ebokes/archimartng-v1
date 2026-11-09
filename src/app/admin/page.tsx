@@ -135,6 +135,18 @@ export default async function AdminPage() {
           >
             Manage plans →
           </Link>
+          <Link
+            href="/admin/professionals"
+            className="ml-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            Manage professionals →
+          </Link>
+          <Link
+            href="/admin/applications"
+            className="ml-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            Review applications →
+          </Link>
         </div>
 
         <div className="mt-12 grid gap-10 xl:grid-cols-2">

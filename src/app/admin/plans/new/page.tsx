@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AdminAccessError } from '@/lib/admin-authorization'
+import { isPlanImageUploadConfigured } from '@/lib/plan-image-storage'
 import { requireAdmin } from '@/lib/require-admin'
 import { createPlan } from '../actions'
 import { PlanForm } from '../plan-form'
@@ -28,7 +29,11 @@ export default async function NewPlanPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           Save as a draft until the listing is ready for clients.
         </p>
-        <PlanForm action={createPlan} submitLabel="Save plan" />
+        <PlanForm
+          action={createPlan}
+          submitLabel="Save plan"
+          uploadAvailable={isPlanImageUploadConfigured()}
+        />
       </div>
     </main>
   )

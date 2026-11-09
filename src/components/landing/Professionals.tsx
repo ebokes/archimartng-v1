@@ -6,8 +6,8 @@ import {
   Sofa,
   Wrench,
   ArrowUpRight,
-  BadgeCheck,
 } from 'lucide-react'
+import Link from 'next/link'
 
 const roles = [
   {
@@ -60,15 +60,22 @@ export function Professionals() {
             Hire the right professionals at every stage
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Every professional on ARCHIMARTng is identity-verified and reviewed.
+            Browse profiles published by the Archimart team. Verified badges are
+            shown after manual review.
           </p>
+          <Link
+            href="/professionals"
+            className="mt-6 inline-flex rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Browse published profiles →
+          </Link>
         </div>
 
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {roles.map((r) => (
-            <a
+            <Link
               key={r.title}
-              href="#waitlist"
+              href="/professionals"
               className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all hover:border-accent/40 hover:-translate-y-1"
               style={{ boxShadow: 'var(--shadow-card)' }}
             >
@@ -93,15 +100,9 @@ export function Professionals() {
                 </div>
               </div>
               <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-border pt-4 text-[11px] font-medium text-muted-foreground">
-                <span className="inline-flex items-center gap-1 text-accent">
-                  <BadgeCheck className="h-3.5 w-3.5" /> KYC Verified
-                </span>
-                <span className="opacity-50">·</span>
-                <span>Reviewed portfolios</span>
-                <span className="opacity-50">·</span>
-                <span>Escrow-ready</span>
+                Browse published professional profiles
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AdminAccessError } from '@/lib/admin-authorization'
+import { isPlanImageUploadConfigured } from '@/lib/plan-image-storage'
 import { getAdminPlan } from '@/lib/plans'
 import { updatePlan } from '../../actions'
 import { PlanForm } from '../../plan-form'
@@ -40,6 +41,7 @@ export default async function EditPlanPage({
         <PlanForm
           action={updatePlan.bind(null, id)}
           submitLabel="Save changes"
+          uploadAvailable={isPlanImageUploadConfigured()}
           values={{
             ...plan,
             coverUrl: plan.cover?.imageUrl,

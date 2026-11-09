@@ -35,18 +35,31 @@ export const planInput = z
       .transform((value) => (value === '' ? null : value)),
     plotAreaSqm: optionalArea,
     floorAreaSqm: optionalArea,
-    coverUrl: z.union([z.literal(''), z.url().startsWith('https://')]),
+    coverUrl: z.union([
+      z.literal(''),
+      z.url().startsWith('https://'),
+      z
+        .string()
+        .regex(
+          /^\/plan-images\/[a-z0-9][a-z0-9._-]*\.(?:avif|jpe?g|png|webp)$/i,
+        ),
+    ]),
     coverAlt: z.string().trim().max(200),
+    coverFileProvided: z.boolean().default(false),
     publicationStatus: z.enum(['draft', 'published', 'archived']),
   })
   .superRefine((value, context) => {
-    if (value.coverUrl && !value.coverAlt)
+    if ((value.coverUrl || value.coverFileProvided) && !value.coverAlt)
       context.addIssue({
         code: 'custom',
         path: ['coverAlt'],
         message: 'Describe the cover image.',
       })
-    if (value.publicationStatus === 'published' && !value.coverUrl)
+    if (
+      value.publicationStatus === 'published' &&
+      !value.coverUrl &&
+      !value.coverFileProvided
+    )
       context.addIssue({
         code: 'custom',
         path: ['coverUrl'],
@@ -57,8 +70,9 @@ export const planInput = z
 export type PlanInput = z.infer<typeof planInput>
 
 export function parsePlanForm(formData: FormData) {
-  return planInput.safeParse(
-    Object.fromEntries(
+  const coverFile = formData.get('coverFile')
+  return planInput.safeParse({
+    ...Object.fromEntries(
       [
         'title',
         'slug',
@@ -75,5 +89,6 @@ export function parsePlanForm(formData: FormData) {
         'publicationStatus',
       ].map((key) => [key, formData.get(key) ?? '']),
     ),
-  )
+    coverFileProvided: coverFile instanceof File && coverFile.size > 0,
+  })
 }

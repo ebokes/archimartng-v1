@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { PlanImage } from '@/components/plan-image'
 import { getPublishedPlan } from '@/lib/plans'
 
 export const dynamic = 'force-dynamic'
@@ -54,20 +54,11 @@ export default async function PlanDetailPage({
         <div className="mt-8 grid gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-              {cover ? (
-                <Image
-                  unoptimized
-                  src={cover.imageUrl}
-                  alt={cover.altText}
-                  fill
-                  sizes="(min-width: 1024px) 55vw, 100vw"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="grid h-full place-items-center text-muted-foreground">
-                  Image pending
-                </div>
-              )}
+              <PlanImage
+                src={cover?.imageUrl ?? null}
+                alt={cover?.altText ?? plan.title}
+                sizes="(min-width: 1024px) 55vw, 100vw"
+              />
             </div>
             {plan.images.length > 1 && (
               <div className="mt-4 grid grid-cols-2 gap-4">
@@ -78,13 +69,10 @@ export default async function PlanDetailPage({
                       key={image.id}
                       className="relative aspect-[4/3] overflow-hidden rounded-lg bg-muted"
                     >
-                      <Image
-                        unoptimized
+                      <PlanImage
                         src={image.imageUrl}
                         alt={image.altText}
-                        fill
                         sizes="(min-width: 1024px) 25vw, 50vw"
-                        className="object-cover"
                       />
                     </div>
                   ))}
