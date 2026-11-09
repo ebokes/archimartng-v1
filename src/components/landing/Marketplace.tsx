@@ -7,6 +7,7 @@ import bungalow from '@/assets/plan-bungalow.jpg'
 import flats from '@/assets/plan-flats.jpg'
 import luxury from '@/assets/plan-luxury.jpg'
 import Image from 'next/image'
+import Link from 'next/link'
 
 const categories = [
   'All',
@@ -119,9 +120,15 @@ export function Marketplace() {
               Featured building plans
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Browse hundreds of ready-to-build, professionally drawn plans —
-              filtered for your budget and plot.
+              Explore architectural plans selected for Nigerian homes and
+              projects.
             </p>
+            <Link
+              href="/plans"
+              className="mt-6 inline-flex rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Browse published plans →
+            </Link>
           </div>
 
           <div className="flex flex-wrap gap-2">
