@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { PlanImage } from '@/components/plan-image'
+import { EnquiryForm } from '@/components/enquiry-form'
 import { getPublishedPlan } from '@/lib/plans'
 
 export const dynamic = 'force-dynamic'
@@ -121,10 +122,7 @@ export default async function PlanDetailPage({
             <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">
               {plan.description}
             </p>
-            <p className="mt-9 rounded-lg border border-border bg-muted/40 p-5 text-sm leading-6 text-muted-foreground">
-              Enquiries for individual plans will open when the client enquiry
-              flow is ready.
-            </p>
+            <EnquiryForm targetType="plan" slug={plan.slug} />
           </div>
         </div>
       </article>

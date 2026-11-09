@@ -130,6 +130,12 @@ export default async function AdminPage() {
 
         <div className="mt-8">
           <Link
+            href="/admin/enquiries"
+            className="mr-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            Manage enquiries →
+          </Link>
+          <Link
             href="/admin/plans"
             className="inline-flex rounded-lg bg-navy px-5 py-3 text-sm font-semibold text-navy-foreground hover:opacity-90"
           >
@@ -211,6 +217,12 @@ export default async function AdminPage() {
                         {enquiry.message}
                       </p>
                     </details>
+                    <Link
+                      href={`/admin/enquiries/${enquiry.id}`}
+                      className="mt-4 inline-block text-sm font-semibold text-navy underline-offset-4 hover:underline dark:text-gold"
+                    >
+                      Review enquiry →
+                    </Link>
                   </article>
                 ))}
               </div>

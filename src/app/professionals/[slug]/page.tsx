@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { BadgeCheck } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getPublishedProfessional } from '@/lib/professionals'
+import { EnquiryForm } from '@/components/enquiry-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,10 +86,7 @@ export default async function ProfessionalDetailPage({
               {profile.bio}
             </p>
           </div>
-          <p className="mt-9 rounded-lg border border-border bg-muted/40 p-5 text-sm leading-6 text-muted-foreground">
-            Enquiries for individual professionals will open when the client
-            enquiry flow is ready.
-          </p>
+          <EnquiryForm targetType="professional" slug={profile.slug} />
         </div>
       </article>
     </main>
