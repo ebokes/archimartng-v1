@@ -77,6 +77,30 @@ export default async function ApplicationReviewPage({
             </p>
           </div>
         </div>
+        {application.professionalId ? (
+          <p className="mt-6 rounded-xl border border-border bg-card p-5 text-sm">
+            A professional profile is linked to this application.{' '}
+            <Link
+              href={`/admin/professionals/${application.professionalId}/edit`}
+              className="font-semibold underline"
+            >
+              Edit linked profile
+            </Link>
+          </p>
+        ) : application.status === 'approved' ? (
+          <div className="mt-6 rounded-xl border border-border bg-card p-5 text-sm">
+            <p>
+              Approval is complete. Create a private draft using the applicant
+              details.
+            </p>
+            <Link
+              href={`/admin/professionals/new?applicationId=${application.id}`}
+              className="mt-3 inline-block font-semibold underline"
+            >
+              Create draft profile from application
+            </Link>
+          </div>
+        ) : null}
         <ReviewForm
           action={reviewProfessionalApplication.bind(null, id)}
           status={application.status}

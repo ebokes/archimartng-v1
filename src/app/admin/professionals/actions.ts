@@ -1,10 +1,10 @@
 'use server'
 
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { authDb } from '@/db/auth-client'
-import { professionals } from '@/db/schema'
+import { professionalApplications, professionals } from '@/db/schema'
 import {
   parseProfessionalForm,
   type ProfessionalInput,
@@ -91,6 +91,82 @@ export async function createProfessional(
   revalidateListings(input.slug)
   redirect('/admin/professionals')
 }
+
+export async function createProfessionalFromApplication(
+  applicationId: string,
+  _state: ProfessionalActionState,
+  formData: FormData,
+): Promise<ProfessionalActionState> {
+  const admin = await requireAdmin()
+  if (!/^[0-9a-f-]{36}$/i.test(applicationId))
+    return { error: 'Invalid application.' }
+  const input = parse(formData)
+  if (isError(input)) return input
+  if (
+    input.publicationStatus !== 'draft' ||
+    input.verificationStatus !== 'unverified'
+  )
+    return {
+      error: 'Create the profile as a draft before publishing or verifying it.',
+    }
+
+  let profileId: string | null = null
+  try {
+    profileId = await authDb.transaction(async (tx) => {
+      const [application] = await tx
+        .select({
+          status: professionalApplications.status,
+          professionalId: professionalApplications.professionalId,
+        })
+        .from(professionalApplications)
+        .where(eq(professionalApplications.id, applicationId))
+        .limit(1)
+      if (application?.status !== 'approved' || application.professionalId)
+        return null
+
+      const [profile] = await tx
+        .insert(professionals)
+        .values({
+          ...values(input),
+          publicationStatus: 'draft',
+          verificationStatus: 'unverified',
+          createdByAdminId: admin.id,
+        })
+        .returning({ id: professionals.id })
+
+      const [linked] = await tx
+        .update(professionalApplications)
+        .set({ professionalId: profile.id })
+        .where(
+          and(
+            eq(professionalApplications.id, applicationId),
+            eq(professionalApplications.status, 'approved'),
+            isNull(professionalApplications.professionalId),
+          ),
+        )
+        .returning({ id: professionalApplications.id })
+      if (!linked) throw new ApplicationAlreadyLinkedError()
+      return profile.id
+    })
+  } catch (error) {
+    if (error instanceof ApplicationAlreadyLinkedError)
+      return {
+        error:
+          'This application already has a profile or is no longer approved.',
+      }
+    return writeError(error)
+  }
+  if (!profileId)
+    return {
+      error: 'This application already has a profile or is no longer approved.',
+    }
+  revalidateListings(input.slug)
+  revalidatePath('/admin/applications')
+  revalidatePath(`/admin/applications/${applicationId}`)
+  redirect(`/admin/professionals/${profileId}/edit`)
+}
+
+class ApplicationAlreadyLinkedError extends Error {}
 
 export async function updateProfessional(
   id: string,

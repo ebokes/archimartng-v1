@@ -58,8 +58,9 @@ export function ReviewForm({
         />
       </label>
       <p className="text-xs leading-5 text-muted-foreground">
-        Approval does not publish a profile. Create or update the professional
-        listing separately after review. Notes stay in the admin workspace.
+        Approval does not publish a profile. Once approved, use the application
+        page to create a linked private draft. Notes stay in the admin
+        workspace.
       </p>
       <button
         type="submit"

@@ -16,7 +16,7 @@ export const professionalApplicationInput = z.object({
   city: optionalText(120),
   state: optionalText(120),
   portfolioUrl: z
-    .union([z.literal(''), z.url().startsWith('https://')])
+    .union([z.literal(''), z.url().startsWith('https://').max(2048)])
     .transform((value) => value || null),
   message: z.string().trim().min(20).max(4000),
 })

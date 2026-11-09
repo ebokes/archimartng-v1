@@ -91,6 +91,7 @@ export function ApplicationForm() {
             className={field}
             name="portfolioUrl"
             type="url"
+            maxLength={2048}
             placeholder="https://example.com"
           />
         </label>

@@ -44,6 +44,12 @@ test('professional application rejects bad contact and portfolio values', () => 
     false,
   )
   assert.equal(
+    parseProfessionalApplicationForm(
+      form({ portfolioUrl: `https://example.com/${'x'.repeat(2048)}` }),
+    ).success,
+    false,
+  )
+  assert.equal(
     parseProfessionalApplicationForm(form({ message: 'short' })).success,
     false,
   )

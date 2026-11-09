@@ -28,6 +28,7 @@ export function ProfessionalForm({
   action,
   values = {},
   submitLabel,
+  fromApplication = false,
 }: {
   action: (
     state: ProfessionalActionState,
@@ -35,6 +36,7 @@ export function ProfessionalForm({
   ) => Promise<ProfessionalActionState>
   values?: Values
   submitLabel: string
+  fromApplication?: boolean
 }) {
   const [state, formAction, pending] = useActionState(action, { error: null })
   return (
@@ -163,38 +165,47 @@ export function ProfessionalForm({
           />
         </label>
       </div>
-      <div className="grid gap-6 border-t border-border pt-7 sm:grid-cols-2">
-        <label className={label}>
-          Publication status
-          <select
-            className={field}
-            name="publicationStatus"
-            defaultValue={values.publicationStatus ?? 'draft'}
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </select>
-          <span className="mt-2 block text-xs font-normal text-muted-foreground">
-            Only published profiles appear in the public directory.
-          </span>
-        </label>
-        <label className={label}>
-          Verification status
-          <select
-            className={field}
-            name="verificationStatus"
-            defaultValue={values.verificationStatus ?? 'unverified'}
-          >
-            <option value="unverified">Unverified</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <span className="mt-2 block text-xs font-normal text-muted-foreground">
-            Choose Verified only after manual review.
-          </span>
-        </label>
-      </div>
+      {fromApplication ? (
+        <div className="border-t border-border pt-7 text-sm text-muted-foreground">
+          This profile will start as a private, unverified draft. You can
+          publish or verify it later from its edit page.
+          <input type="hidden" name="publicationStatus" value="draft" />
+          <input type="hidden" name="verificationStatus" value="unverified" />
+        </div>
+      ) : (
+        <div className="grid gap-6 border-t border-border pt-7 sm:grid-cols-2">
+          <label className={label}>
+            Publication status
+            <select
+              className={field}
+              name="publicationStatus"
+              defaultValue={values.publicationStatus ?? 'draft'}
+            >
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="archived">Archived</option>
+            </select>
+            <span className="mt-2 block text-xs font-normal text-muted-foreground">
+              Only published profiles appear in the public directory.
+            </span>
+          </label>
+          <label className={label}>
+            Verification status
+            <select
+              className={field}
+              name="verificationStatus"
+              defaultValue={values.verificationStatus ?? 'unverified'}
+            >
+              <option value="unverified">Unverified</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <span className="mt-2 block text-xs font-normal text-muted-foreground">
+              Choose Verified only after manual review.
+            </span>
+          </label>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-4 border-t border-border pt-6">
         <button
           type="submit"
