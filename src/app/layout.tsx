@@ -12,9 +12,9 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 })
 
-const TITLE = 'ARCHIMARTng — Buy Plans. Hire Pros. Build Smarter.'
+const TITLE = 'ARCHIMARTng — Explore Plans and Professionals'
 const DESC =
-  "Africa's premium construction-tech platform. Buy ready-to-build architectural designs and hire verified architects, builders and engineers — securely."
+  'Browse architectural plans and professional profiles in Nigeria. Send an enquiry and the Archimart team will follow up manually.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(
