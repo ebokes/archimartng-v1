@@ -45,6 +45,7 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 - On 9 November 2026, the operator confirmed in the development browser that a public enquiry appeared in `/admin/enquiries` and that a status change and internal note persisted after refresh. This is operator-reported browser verification; the coding agent did not use the private admin session or independently inspect the written database rows.
 - On 10 November 2026, the professional application form and admin review flow were updated to support a separate proposed public biography. New applicants must provide it; administrators see it during application review and can edit it in the prefilled private profile draft before publication. Older applications may have no proposed biography and still require an admin-written biography. After explicit approval, Drizzle migration `drizzle/0002_orange_demogoblin.sql` added one nullable `proposed_bio` column to `professional_applications` on the verified Neon development branch. A read-only follow-up confirmed the column and three Drizzle migration journal entries. Focused tests, lint, TypeScript, and the Webpack build passed. The new form and review flow have not yet been browser-tested. No production resource was accessed.
 - The landing page now renders recently published plan listings from the existing public catalogue query, with a truthful empty state when none are published. Navigation, hero copy, calls to action, the process explanation, footer, and global metadata point to the functioning plans, professionals, application, and enquiry flows. Mocked plan prices, build estimates, fake recommendation badges, waitlist success, and claims about payments, AI, and tracking are no longer rendered. Old unused landing components remain in the repository but are not imported by the homepage. Lint, TypeScript, and the Webpack production build passed; the root route is dynamic. No database write or migration was run for this page change, and no browser screenshot review was performed.
+- SEO foundation now uses dynamic `/robots.txt` and `/sitemap.xml`. Without a valid HTTPS `NEXT_PUBLIC_SITE_URL`, public pages are marked noindex, robots disallow crawling, and the sitemap is empty. With a configured public origin, robots allows public pages while excluding admin and auth routes, and the sitemap lists only published plans and professional profiles plus public index/application pages. The web manifest now describes the architecture marketplace and points to existing icons. Two site URL tests, lint, TypeScript, and a Webpack build passed; the first sandboxed build could not fetch the existing Google font, while the network-enabled retry passed. Production domain configuration and live crawler checks remain pending. No database access, migration, or production resource change was made for this task.
 - Abuse review found that the public application form has server-side validation and a basic honeypot, but no rate limit. The portfolio URL now has a 2,048-character limit on the client and server. Before launch, add a modest per-IP request limit for the application action at the chosen deployment edge; do not rely on an in-memory per-process limiter. No external service was added during this check.
 
 ## Security and compatibility review
@@ -56,16 +57,16 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 ## Progress
 
-- **Last completed task:** Replaced mocked landing plan cards and out-of-scope rendered marketing with published plan data and MVP-accurate copy; lint, TypeScript, and Webpack build passed.
+- **Last completed task:** Added robots, sitemap, and manifest SEO foundation; tests, lint, TypeScript, and Webpack build passed.
 - **Current task:** Verify professional biography submission, admin review, and draft prefill in a development browser session when the operator is available.
 - **Known blockers:** R2 account setup is postponed; Turbopack build is blocked by the local worker port restriction.
-- **Next recommended task:** Verify the biography workflow in development; configure R2 when available and add deployment-level application and enquiry throttling before launch.
+- **Next recommended task:** Verify the biography workflow in development; configure the final public site URL and check crawler output before launch. Configure R2 when available and add deployment-level application and enquiry throttling.
 
 ## Remaining development
 
 1. Verify the public professional biography submission, admin review, and private draft prefill in a development browser session.
 2. Configure development R2 storage and verify the authenticated image upload flow when Cloudflare account setup becomes available.
 3. Add proportionate deployment-edge rate limits for public professional applications and enquiries before launch.
-4. Complete testing, SEO, and production launch preparation.
+4. Set a real HTTPS `NEXT_PUBLIC_SITE_URL`, check robots and sitemap output on the deployment domain, and complete testing and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.
