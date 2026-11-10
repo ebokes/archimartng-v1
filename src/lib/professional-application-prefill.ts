@@ -7,6 +7,7 @@ type ApplicationDetails = {
   city: string | null
   state: string | null
   portfolioUrl: string | null
+  proposedBio: string | null
 }
 
 export function prefillProfessionalFromApplication(
@@ -29,6 +30,7 @@ export function prefillProfessionalFromApplication(
     contactEmail: application.email,
     contactPhone: application.phone,
     websiteUrl: application.portfolioUrl,
+    bio: application.proposedBio ?? '',
     publicationStatus: 'draft' as const,
     verificationStatus: 'unverified' as const,
   }

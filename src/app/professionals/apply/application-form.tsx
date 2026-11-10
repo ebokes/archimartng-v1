@@ -104,7 +104,23 @@ export function ApplicationForm() {
           <input className={field} name="state" maxLength={120} />
         </label>
         <label className={`${label} sm:col-span-2`}>
-          Tell us about your work
+          Proposed public biography
+          <textarea
+            className={field}
+            name="proposedBio"
+            rows={8}
+            required
+            minLength={20}
+            maxLength={10000}
+            placeholder="Describe your professional background, experience, and the work clients can expect to see on your public profile."
+          />
+          <span className="mt-2 block text-xs font-normal text-muted-foreground">
+            An administrator will review and may edit this text before your
+            profile is published.
+          </span>
+        </label>
+        <label className={`${label} sm:col-span-2`}>
+          Message to the Archimart team (private)
           <textarea
             className={field}
             name="message"
@@ -112,7 +128,7 @@ export function ApplicationForm() {
             required
             minLength={20}
             maxLength={4000}
-            placeholder="Describe your experience and the work you would like to list."
+            placeholder="Tell us why you are applying or share anything our review team should know."
           />
         </label>
       </div>

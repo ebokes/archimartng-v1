@@ -71,7 +71,14 @@ export default async function ApplicationReviewPage({
             </p>
           )}
           <div>
-            <h2 className="font-semibold">Message</h2>
+            <h2 className="font-semibold">Proposed public biography</h2>
+            <p className="mt-2 whitespace-pre-wrap leading-6 text-muted-foreground">
+              {application.proposedBio ??
+                'This application predates the biography field. Write a biography when creating the profile.'}
+            </p>
+          </div>
+          <div>
+            <h2 className="font-semibold">Private message</h2>
             <p className="mt-2 whitespace-pre-wrap leading-6 text-muted-foreground">
               {application.message}
             </p>

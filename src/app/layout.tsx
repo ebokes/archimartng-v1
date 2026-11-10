@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import type { ReactNode } from 'react'
+import { getPublicSiteUrl } from '@/lib/site-url'
 
 import { Providers } from './providers'
 import './globals.css'
@@ -12,18 +13,18 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 })
 
-const TITLE = 'ARCHIMARTng — Buy Plans. Hire Pros. Build Smarter.'
+const TITLE = 'ARCHIMARTng — Explore Plans and Professionals'
 const DESC =
-  "Africa's premium construction-tech platform. Buy ready-to-build architectural designs and hire verified architects, builders and engineers — securely."
+  'Browse architectural plans and professional profiles in Nigeria. Send an enquiry and the Archimart team will follow up manually.'
+const siteUrl = getPublicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
-  ),
+  metadataBase: new URL(siteUrl ?? 'http://localhost:3000'),
   title: TITLE,
   description: DESC,
   openGraph: { title: TITLE, description: DESC, type: 'website' },
   twitter: { card: 'summary_large_image', title: TITLE, description: DESC },
+  robots: siteUrl ? undefined : { index: false, follow: false },
   icons: {
     icon: [
       { url: '/favicon.ico', type: 'image/x-icon' },

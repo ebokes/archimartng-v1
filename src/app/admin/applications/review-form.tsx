@@ -58,9 +58,9 @@ export function ReviewForm({
         />
       </label>
       <p className="text-xs leading-5 text-muted-foreground">
-        Approval does not publish a profile. Once approved, use the application
-        page to create a linked private draft. Notes stay in the admin
-        workspace.
+        Review the proposed public biography before approval. Approval does not
+        publish a profile. Once approved, create a linked private draft and edit
+        the biography before publication. Notes stay in the admin workspace.
       </p>
       <button
         type="submit"

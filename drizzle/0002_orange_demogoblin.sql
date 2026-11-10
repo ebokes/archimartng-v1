@@ -1,0 +1,1 @@
+ALTER TABLE "professional_applications" ADD COLUMN "proposed_bio" text;
