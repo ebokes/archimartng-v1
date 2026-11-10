@@ -43,6 +43,7 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 - Public enquiry forms are implemented on published plan and professional detail pages. Server actions recheck publication before saving to the existing `enquiries` table, validate contact details and message, require explicit consent, and record a consent version and timestamp. A basic honeypot catches simple bots. Enquiries remain private for administrator follow-up; no automatic notification is sent. Two input tests, lint, TypeScript, and the Webpack build passed. No live enquiry submission or database write was performed in this task. A deployment-level rate limit is still pending.
 - Administrator enquiry management is implemented at `/admin/enquiries` and `/admin/enquiries/[id]`, including a full enquiry list, contact and consent details, status changes, and internal follow-up notes. Dashboard enquiries link to their review pages. Every protected read and write checks the session and active `admins` allow-list. The enquiry input and review tests (three total), lint, TypeScript, and Webpack build passed. No database write was run by the coding agent in this implementation task; the operator tested the browser flow afterward.
 - On 9 November 2026, the operator confirmed in the development browser that a public enquiry appeared in `/admin/enquiries` and that a status change and internal note persisted after refresh. This is operator-reported browser verification; the coding agent did not use the private admin session or independently inspect the written database rows.
+- On 10 November 2026, the professional application form and admin review flow were updated to support a separate proposed public biography. New applicants must provide it; administrators see it during application review and can edit it in the prefilled private profile draft before publication. Older applications may have no proposed biography and still require an admin-written biography. After explicit approval, Drizzle migration `drizzle/0002_orange_demogoblin.sql` added one nullable `proposed_bio` column to `professional_applications` on the verified Neon development branch. A read-only follow-up confirmed the column and three Drizzle migration journal entries. Focused tests, lint, TypeScript, and the Webpack build passed. The new form and review flow have not yet been browser-tested. No production resource was accessed.
 - Abuse review found that the public application form has server-side validation and a basic honeypot, but no rate limit. The portfolio URL now has a 2,048-character limit on the client and server. Before launch, add a modest per-IP request limit for the application action at the chosen deployment edge; do not rely on an in-memory per-process limiter. No external service was added during this check.
 
 ## Security and compatibility review
@@ -54,16 +55,17 @@ Archimart is a Nigerian architecture marketplace targeting a functional MVP laun
 
 ## Progress
 
-- **Last completed task:** Implemented and checked public enquiry submission and administrator review; the operator confirmed the full enquiry flow in a development browser.
-- **Current task:** Replace remaining mocked plan cards and out-of-scope landing page marketing claims.
-- **Known blockers:** R2 account setup is postponed; Turbopack build is blocked by the local worker port restriction. Neither blocks the next MVP task.
-- **Next recommended task:** Replace remaining mocked landing page content. Add deployment-edge throttling before launch.
+- **Last completed task:** Added proposed professional biography input and admin review, applied the approved development migration, and verified the column and migration journal.
+- **Current task:** Verify professional biography submission, admin review, and draft prefill in a development browser session.
+- **Known blockers:** R2 account setup is postponed; Turbopack build is blocked by the local worker port restriction.
+- **Next recommended task:** Verify the biography workflow in development, then replace remaining mocked landing page content.
 
 ## Remaining development
 
-1. Replace remaining mocked plan cards and out-of-scope landing page marketing claims.
-2. Configure development R2 storage and verify the authenticated image upload flow when Cloudflare account setup becomes available.
-3. Add proportionate deployment-edge rate limits for public professional applications and enquiries before launch.
-4. Complete testing, SEO, and production launch preparation.
+1. Verify the public professional biography submission, admin review, and private draft prefill in a development browser session.
+2. Replace remaining mocked plan cards and out-of-scope landing page marketing claims.
+3. Configure development R2 storage and verify the authenticated image upload flow when Cloudflare account setup becomes available.
+4. Add proportionate deployment-edge rate limits for public professional applications and enquiries before launch.
+5. Complete testing, SEO, and production launch preparation.
 
 After each meaningful milestone, update the progress section. Never mark functionality complete without verification. Never apply a migration automatically or access production without explicit approval. Every protected server operation must check both the Better Auth session and an active `admins` record.

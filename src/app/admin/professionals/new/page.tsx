@@ -55,7 +55,7 @@ export default async function NewProfessionalPage({
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {application
-            ? 'Applicant details are prefilled. Write a public biography, then save a private draft. Publication and verification require separate admin actions.'
+            ? 'Applicant details and their proposed biography are prefilled. Review and edit the biography before saving a private draft. Publication and verification require separate admin actions.'
             : 'Save a draft until the profile is ready. Verification requires manual review.'}
         </p>
         <ProfessionalForm

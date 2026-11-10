@@ -19,6 +19,7 @@ export const professionalApplicationInput = z.object({
     .union([z.literal(''), z.url().startsWith('https://').max(2048)])
     .transform((value) => value || null),
   message: z.string().trim().min(20).max(4000),
+  proposedBio: z.string().trim().min(20).max(10000),
 })
 
 export function parseProfessionalApplicationForm(formData: FormData) {
@@ -34,6 +35,7 @@ export function parseProfessionalApplicationForm(formData: FormData) {
         'state',
         'portfolioUrl',
         'message',
+        'proposedBio',
       ].map((key) => [key, formData.get(key) ?? '']),
     ),
   )

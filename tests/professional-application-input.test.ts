@@ -16,6 +16,8 @@ function form(overrides: Record<string, string> = {}) {
     state: 'Lagos',
     portfolioUrl: '',
     message: 'I design residential buildings across Lagos.',
+    proposedBio:
+      'I am an architect focused on practical residential design across Lagos.',
     ...overrides,
   }
   const data = new FormData()
@@ -29,6 +31,7 @@ test('professional application accepts relevant details without an account', () 
   if (result.success) {
     assert.equal(result.data.phone, null)
     assert.equal(result.data.portfolioUrl, null)
+    assert.equal(result.data.proposedBio.startsWith('I am an architect'), true)
   }
 })
 
@@ -51,6 +54,15 @@ test('professional application rejects bad contact and portfolio values', () => 
   )
   assert.equal(
     parseProfessionalApplicationForm(form({ message: 'short' })).success,
+    false,
+  )
+  assert.equal(
+    parseProfessionalApplicationForm(form({ proposedBio: 'short' })).success,
+    false,
+  )
+  assert.equal(
+    parseProfessionalApplicationForm(form({ proposedBio: 'x'.repeat(10001) }))
+      .success,
     false,
   )
 })

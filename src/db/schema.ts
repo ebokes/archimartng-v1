@@ -191,6 +191,7 @@ export const professionalApplications = pgTable(
     state: text('state'),
     portfolioUrl: text('portfolio_url'),
     message: text('message').notNull(),
+    proposedBio: text('proposed_bio'),
     status: applicationStatus('status').default('submitted').notNull(),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
     reviewedByAdminId: uuid('reviewed_by_admin_id').references(
