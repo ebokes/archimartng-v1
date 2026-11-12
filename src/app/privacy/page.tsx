@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-semibold text-foreground">
             Privacy notice
           </h1>
-          <p className="mt-3">Updated 10 November 2026</p>
+          <p className="mt-3">Updated 12 November 2026</p>
           <p className="mt-4">
             Archimart is an admin-managed architecture marketplace. This notice
             explains how the site handles information sent through its
@@ -83,18 +83,43 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-foreground">
-            Retention and requests
+            How long we keep records
           </h2>
           <p className="mt-2">
-            Archimart keeps submissions and related notes while they are needed
-            for application review or enquiry follow-up. The site does not yet
-            delete old records automatically. Archimart is establishing a manual
-            review and deletion schedule before public launch; this notice will
-            be updated when that schedule is adopted.
+            A designated administrator reviews pending applications and open
+            enquiries at least every 90 days. Approved applications without a
+            linked profile are also reviewed every 90 days. We delete rejected
+            applications 12 months after final review and approved applications
+            12 months after a profile is created. A public profile is managed
+            separately from its original application.
           </p>
           <p className="mt-3">
+            We delete spam enquiries after 30 days. We delete closed enquiries
+            12 months after closure or the last follow-up, whichever is later.
+            Internal notes are removed with their related application or
+            enquiry. An administrator may extend a period where needed for a
+            legal dispute, unresolved complaint, or another lawful obligation;
+            the reason and next review date are recorded.
+          </p>
+          <p className="mt-3">
+            Reviews and deletions are handled manually; the site does not delete
+            records automatically. Deletion from the active database may not
+            immediately remove information from historical backups, snapshots,
+            or exports. Those copies have separate retention settings and
+            handling. Restored data must be checked against the deletion record
+            before it is used.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">
+            Privacy requests
+          </h2>
+          <p className="mt-2">
             You may ask Archimart to review, correct, or delete information you
-            submitted. Send privacy and data requests to{' '}
+            submitted. We may ask for information needed to confirm that the
+            record belongs to you before acting on a request. Send privacy and
+            data requests to{' '}
             <a
               href="mailto:archimartng@gmail.com"
               className="underline hover:text-foreground"
