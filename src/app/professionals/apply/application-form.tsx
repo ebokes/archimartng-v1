@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import Link from 'next/link'
 import type { ApplicationActionState } from './actions'
 import { submitProfessionalApplication } from './actions'
 
@@ -134,7 +135,11 @@ export function ApplicationForm() {
       </div>
       <p className="text-sm leading-6 text-muted-foreground">
         We use these details to review your application and contact you about
-        it. Submitting does not publish a profile.
+        it. Submitting does not publish a profile. Read our{' '}
+        <Link href="/privacy" className="underline hover:text-foreground">
+          privacy notice
+        </Link>{' '}
+        for details.
       </p>
       <button
         type="submit"
