@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import Link from 'next/link'
 import { submitEnquiry, type EnquiryActionState } from '@/app/enquiries/actions'
 
 const field =
@@ -101,6 +102,13 @@ export function EnquiryForm({
           professional in this listing.
         </span>
       </label>
+      <p className="text-xs text-muted-foreground">
+        Read our{' '}
+        <Link href="/privacy" className="underline hover:text-foreground">
+          privacy notice
+        </Link>{' '}
+        to see how we handle your enquiry.
+      </p>
       <button
         type="submit"
         disabled={pending}

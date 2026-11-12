@@ -36,6 +36,9 @@ export function Footer() {
           <Link href="/professionals/apply" className="hover:underline">
             Apply to be listed
           </Link>
+          <Link href="/privacy" className="hover:underline">
+            Privacy
+          </Link>
         </nav>
       </div>
     </footer>
