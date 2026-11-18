@@ -1,6 +1,8 @@
 import 'server-only'
 
 export type MarketplaceAccountRole = 'client' | 'professional'
+export type ProfessionalApprovalStatus =
+  'pending' | 'approved' | 'rejected' | 'suspended'
 
 export class MarketplaceAccountAccessError extends Error {
   constructor(readonly status: 401 | 403) {
@@ -30,6 +32,31 @@ export async function authorizeMarketplaceAccount<
     account.authSubject !== authSubject ||
     account.role !== requiredRole
   )
+    throw new MarketplaceAccountAccessError(403)
+
+  return account
+}
+
+// Use the role check for onboarding/status pages. Approved professional operations
+// must additionally check approval on every protected server operation.
+export async function authorizeApprovedProfessional<
+  T extends {
+    authSubject: string
+    role: MarketplaceAccountRole
+    isActive: boolean
+    approvalStatus?: ProfessionalApprovalStatus
+  },
+>(
+  authSubject: string | undefined,
+  findAccount: (subject: string) => Promise<T | undefined>,
+): Promise<T> {
+  const account = await authorizeMarketplaceAccount(
+    authSubject,
+    'professional',
+    findAccount,
+  )
+
+  if (account.approvalStatus !== 'approved')
     throw new MarketplaceAccountAccessError(403)
 
   return account

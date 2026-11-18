@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  authorizeApprovedProfessional,
   authorizeMarketplaceAccount,
   MarketplaceAccountAccessError,
 } from '../src/lib/marketplace-account-authorization'
@@ -75,5 +76,68 @@ test('an active account can access only its own role', async () => {
       },
     ),
     professional,
+  )
+})
+
+test('professional onboarding access does not require approval', async () => {
+  const pending = {
+    authSubject: 'subject-2',
+    role: 'professional' as const,
+    isActive: true,
+    approvalStatus: 'pending' as const,
+  }
+  assert.equal(
+    await authorizeMarketplaceAccount(
+      'subject-2',
+      'professional',
+      async () => pending,
+    ),
+    pending,
+  )
+})
+
+test('approved professional operations reject every non-approved state', async () => {
+  for (const approvalStatus of ['pending', 'rejected', 'suspended'] as const) {
+    await assert.rejects(
+      authorizeApprovedProfessional('subject-2', async () => ({
+        authSubject: 'subject-2',
+        role: 'professional',
+        isActive: true,
+        approvalStatus,
+      })),
+      (error) =>
+        error instanceof MarketplaceAccountAccessError && error.status === 403,
+    )
+  }
+})
+
+test('approved professional operations reject clients and suspended accounts', async () => {
+  for (const account of [
+    { authSubject: 'subject-2', role: 'client' as const, isActive: true },
+    {
+      authSubject: 'subject-2',
+      role: 'professional' as const,
+      isActive: false,
+      approvalStatus: 'approved' as const,
+    },
+  ]) {
+    await assert.rejects(
+      authorizeApprovedProfessional('subject-2', async () => account),
+      (error) =>
+        error instanceof MarketplaceAccountAccessError && error.status === 403,
+    )
+  }
+})
+
+test('an active approved professional can access approved operations', async () => {
+  const approved = {
+    authSubject: 'subject-2',
+    role: 'professional' as const,
+    isActive: true,
+    approvalStatus: 'approved' as const,
+  }
+  assert.equal(
+    await authorizeApprovedProfessional('subject-2', async () => approved),
+    approved,
   )
 })
