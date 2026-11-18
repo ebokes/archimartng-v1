@@ -97,7 +97,7 @@ test('professional onboarding access does not require approval', async () => {
 })
 
 test('approved professional operations reject every non-approved state', async () => {
-  for (const approvalStatus of ['pending', 'rejected', 'suspended'] as const) {
+  for (const approvalStatus of ['pending', 'rejected'] as const) {
     await assert.rejects(
       authorizeApprovedProfessional('subject-2', async () => ({
         authSubject: 'subject-2',

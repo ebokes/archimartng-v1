@@ -1,8 +1,7 @@
 import 'server-only'
 
 export type MarketplaceAccountRole = 'client' | 'professional'
-export type ProfessionalApprovalStatus =
-  'pending' | 'approved' | 'rejected' | 'suspended'
+export type ProfessionalApprovalStatus = 'pending' | 'approved' | 'rejected'
 
 export class MarketplaceAccountAccessError extends Error {
   constructor(readonly status: 401 | 403) {
