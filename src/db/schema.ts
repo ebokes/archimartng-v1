@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
+import { user as authUser } from './auth-schema'
 
 export const publicationStatus = pgEnum('publication_status', [
   'draft',
@@ -35,6 +36,32 @@ export const enquiryStatus = pgEnum('enquiry_status', [
   'closed',
   'spam',
 ])
+export const marketplaceRole = pgEnum('marketplace_role', [
+  'client',
+  'professional',
+])
+export const marketplaceAccountStatus = pgEnum('marketplace_account_status', [
+  'active',
+  'suspended',
+  'closed',
+])
+export const professionalApprovalStatus = pgEnum(
+  'professional_approval_status',
+  ['pending', 'approved', 'rejected'],
+)
+export const professionalAccountEventType = pgEnum(
+  'professional_account_event_type',
+  [
+    'onboarding_started',
+    'approval_granted',
+    'approval_rejected',
+    'review_reopened',
+    'account_suspended',
+    'account_restored',
+    'account_closed',
+    'profile_claim_approved',
+  ],
+)
 
 const timestamps = () => ({
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -274,5 +301,129 @@ export const enquiryNotes = pgTable(
       table.createdAt,
     ),
     index('enquiry_notes_admin_idx').on(table.adminId),
+  ],
+)
+
+export const marketplaceAccounts = pgTable(
+  'marketplace_accounts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    authSubject: text('auth_subject')
+      .notNull()
+      .unique()
+      .references(() => authUser.id, { onDelete: 'restrict' }),
+    role: marketplaceRole('role').notNull(),
+    status: marketplaceAccountStatus('status').default('active').notNull(),
+    suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    ...timestamps(),
+  },
+  (table) => [
+    index('marketplace_accounts_role_status_idx').on(table.role, table.status),
+    check(
+      'marketplace_accounts_suspended_at_required',
+      sql`${table.status} <> 'suspended' OR ${table.suspendedAt} IS NOT NULL`,
+    ),
+    check(
+      'marketplace_accounts_closed_at_required',
+      sql`${table.status} <> 'closed' OR ${table.closedAt} IS NOT NULL`,
+    ),
+  ],
+)
+
+export const professionalAccounts = pgTable(
+  'professional_accounts',
+  {
+    accountId: uuid('account_id')
+      .primaryKey()
+      .references(() => marketplaceAccounts.id, { onDelete: 'restrict' }),
+    approvalStatus: professionalApprovalStatus('approval_status')
+      .default('pending')
+      .notNull(),
+    profileId: uuid('profile_id').references(() => professionals.id, {
+      onDelete: 'restrict',
+    }),
+    applicationId: uuid('application_id').references(
+      () => professionalApplications.id,
+      { onDelete: 'set null' },
+    ),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewedByAdminId: uuid('reviewed_by_admin_id').references(
+      () => admins.id,
+      { onDelete: 'restrict' },
+    ),
+    profileClaimedAt: timestamp('profile_claimed_at', { withTimezone: true }),
+    profileClaimApprovedByAdminId: uuid(
+      'profile_claim_approved_by_admin_id',
+    ).references(() => admins.id, { onDelete: 'restrict' }),
+    ...timestamps(),
+  },
+  (table) => [
+    uniqueIndex('professional_accounts_profile_unique').on(table.profileId),
+    uniqueIndex('professional_accounts_application_unique').on(
+      table.applicationId,
+    ),
+    index('professional_accounts_approval_created_idx').on(
+      table.approvalStatus,
+      table.createdAt,
+    ),
+    index('professional_accounts_reviewed_by_idx').on(table.reviewedByAdminId),
+    index('professional_accounts_claim_admin_idx').on(
+      table.profileClaimApprovedByAdminId,
+    ),
+    check(
+      'professional_accounts_review_attribution_required',
+      sql`${table.approvalStatus} = 'pending' OR (${table.reviewedAt} IS NOT NULL AND ${table.reviewedByAdminId} IS NOT NULL)`,
+    ),
+    check(
+      'professional_accounts_claim_requires_approval',
+      sql`${table.profileId} IS NULL OR ${table.approvalStatus} = 'approved'`,
+    ),
+    check(
+      'professional_accounts_claim_attribution_required',
+      sql`(${table.profileId} IS NULL AND ${table.profileClaimedAt} IS NULL AND ${table.profileClaimApprovedByAdminId} IS NULL) OR (${table.profileId} IS NOT NULL AND ${table.profileClaimedAt} IS NOT NULL AND ${table.profileClaimApprovedByAdminId} IS NOT NULL)`,
+    ),
+  ],
+)
+
+export const professionalAccountEvents = pgTable(
+  'professional_account_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => professionalAccounts.accountId, {
+        onDelete: 'restrict',
+      }),
+    actorAdminId: uuid('actor_admin_id').references(() => admins.id, {
+      onDelete: 'restrict',
+    }),
+    eventType: professionalAccountEventType('event_type').notNull(),
+    reason: text('reason'),
+    profileId: uuid('profile_id').references(() => professionals.id, {
+      onDelete: 'restrict',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('professional_account_events_account_created_idx').on(
+      table.accountId,
+      table.createdAt,
+    ),
+    index('professional_account_events_admin_created_idx').on(
+      table.actorAdminId,
+      table.createdAt,
+    ),
+    index('professional_account_events_profile_idx').on(table.profileId),
+    check(
+      'professional_account_events_admin_reason_required',
+      sql`${table.eventType} = 'onboarding_started' OR (${table.actorAdminId} IS NOT NULL AND ${table.reason} IS NOT NULL AND length(btrim(${table.reason})) > 0)`,
+    ),
+    check(
+      'professional_account_events_claim_profile_required',
+      sql`(${table.eventType} = 'profile_claim_approved' AND ${table.profileId} IS NOT NULL) OR (${table.eventType} <> 'profile_claim_approved' AND ${table.profileId} IS NULL)`,
+    ),
   ],
 )
