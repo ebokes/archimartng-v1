@@ -7,8 +7,8 @@ import {
   transitionMarketplaceAccountStatus,
   transitionProfessionalApproval,
   type MarketplaceAccountStatus,
+  type ProfessionalApprovalStatus,
 } from '../src/lib/marketplace-account-lifecycle'
-import type { ProfessionalApprovalStatus } from '../src/lib/marketplace-account-authorization'
 
 const admin = { kind: 'administrator' as const, adminId: 'admin-1' }
 const owner = { kind: 'account-holder' as const, authSubject: 'user-1' }

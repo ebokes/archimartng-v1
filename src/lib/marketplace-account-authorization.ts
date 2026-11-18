@@ -1,7 +1,22 @@
 import 'server-only'
 
-export type MarketplaceAccountRole = 'client' | 'professional'
-export type ProfessionalApprovalStatus = 'pending' | 'approved' | 'rejected'
+import type {
+  MarketplaceAccountRole,
+  MarketplaceAccountStatus,
+  ProfessionalApprovalStatus,
+} from './marketplace-account-lifecycle'
+
+// Pass only Better Auth's server-validated user. Never build this from form data.
+export type MarketplaceIdentity = { id: string; emailVerified: boolean }
+
+// The resolver must read these values from a trusted account query, including
+// the professional approval row. A public application or listing is not an account.
+export type MarketplaceAccountRecord = {
+  authSubject: string
+  role: MarketplaceAccountRole
+  status: MarketplaceAccountStatus
+  approvalStatus: ProfessionalApprovalStatus | null
+}
 
 export class MarketplaceAccountAccessError extends Error {
   constructor(readonly status: 401 | 403) {
@@ -10,53 +25,70 @@ export class MarketplaceAccountAccessError extends Error {
   }
 }
 
-// The resolver must load a future account record linked to the session subject.
-// A professional application or public listing is not an account credential.
-export async function authorizeMarketplaceAccount<
-  T extends {
-    authSubject: string
-    role: MarketplaceAccountRole
-    isActive: boolean
-  },
->(
-  authSubject: string | undefined,
-  requiredRole: MarketplaceAccountRole,
+type Access = 'client' | 'professional_onboarding' | 'approved_professional'
+
+async function authorizeMarketplaceAccount<T extends MarketplaceAccountRecord>(
+  identity: MarketplaceIdentity | null | undefined,
+  access: Access,
   findAccount: (subject: string) => Promise<T | undefined>,
 ): Promise<T> {
-  if (!authSubject) throw new MarketplaceAccountAccessError(401)
+  if (!identity?.id) throw new MarketplaceAccountAccessError(401)
+  if (identity.emailVerified !== true)
+    throw new MarketplaceAccountAccessError(403)
 
-  const account = await findAccount(authSubject)
+  const account = await findAccount(identity.id)
   if (
-    !account?.isActive ||
-    account.authSubject !== authSubject ||
-    account.role !== requiredRole
+    !account ||
+    account.authSubject !== identity.id ||
+    account.status !== 'active'
   )
     throw new MarketplaceAccountAccessError(403)
 
+  const permitted =
+    (access === 'client' &&
+      account.role === 'client' &&
+      account.approvalStatus === null) ||
+    (access === 'professional_onboarding' &&
+      account.role === 'professional' &&
+      (account.approvalStatus === 'pending' ||
+        account.approvalStatus === 'rejected')) ||
+    (access === 'approved_professional' &&
+      account.role === 'professional' &&
+      account.approvalStatus === 'approved')
+
+  if (!permitted) throw new MarketplaceAccountAccessError(403)
   return account
 }
 
-// Use the role check for onboarding/status pages. Approved professional operations
-// must additionally check approval on every protected server operation.
-export async function authorizeApprovedProfessional<
-  T extends {
-    authSubject: string
-    role: MarketplaceAccountRole
-    isActive: boolean
-    approvalStatus?: ProfessionalApprovalStatus
-  },
->(
-  authSubject: string | undefined,
+export function authorizeClientAccount<T extends MarketplaceAccountRecord>(
+  identity: MarketplaceIdentity | null | undefined,
   findAccount: (subject: string) => Promise<T | undefined>,
 ): Promise<T> {
-  const account = await authorizeMarketplaceAccount(
-    authSubject,
-    'professional',
+  return authorizeMarketplaceAccount(identity, 'client', findAccount)
+}
+
+export function authorizeProfessionalOnboarding<
+  T extends MarketplaceAccountRecord,
+>(
+  identity: MarketplaceIdentity | null | undefined,
+  findAccount: (subject: string) => Promise<T | undefined>,
+): Promise<T> {
+  return authorizeMarketplaceAccount(
+    identity,
+    'professional_onboarding',
     findAccount,
   )
+}
 
-  if (account.approvalStatus !== 'approved')
-    throw new MarketplaceAccountAccessError(403)
-
-  return account
+export function authorizeApprovedProfessional<
+  T extends MarketplaceAccountRecord,
+>(
+  identity: MarketplaceIdentity | null | undefined,
+  findAccount: (subject: string) => Promise<T | undefined>,
+): Promise<T> {
+  return authorizeMarketplaceAccount(
+    identity,
+    'approved_professional',
+    findAccount,
+  )
 }

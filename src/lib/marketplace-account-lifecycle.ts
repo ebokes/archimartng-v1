@@ -1,10 +1,7 @@
 import 'server-only'
 
-import type {
-  MarketplaceAccountRole,
-  ProfessionalApprovalStatus,
-} from './marketplace-account-authorization'
-
+export type MarketplaceAccountRole = 'client' | 'professional'
+export type ProfessionalApprovalStatus = 'pending' | 'approved' | 'rejected'
 export type MarketplaceAccountStatus = 'active' | 'suspended' | 'closed'
 
 export type LifecycleActor =

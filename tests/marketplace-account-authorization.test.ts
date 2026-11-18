@@ -2,142 +2,169 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   authorizeApprovedProfessional,
-  authorizeMarketplaceAccount,
+  authorizeClientAccount,
+  authorizeProfessionalOnboarding,
   MarketplaceAccountAccessError,
+  type MarketplaceAccountRecord,
+  type MarketplaceIdentity,
 } from '../src/lib/marketplace-account-authorization'
 
-test('an anonymous request cannot look up a marketplace account', async () => {
-  let queried = false
+const identity = { id: 'subject-1', emailVerified: true }
+const client = {
+  authSubject: 'subject-1',
+  role: 'client' as const,
+  status: 'active' as const,
+  approvalStatus: null,
+}
+const pending = {
+  ...client,
+  role: 'professional' as const,
+  approvalStatus: 'pending' as const,
+}
+const rejected = { ...pending, approvalStatus: 'rejected' as const }
+const approved = { ...pending, approvalStatus: 'approved' as const }
+
+const accessors = {
+  client: authorizeClientAccount,
+  onboarding: authorizeProfessionalOnboarding,
+  approved: authorizeApprovedProfessional,
+}
+
+async function expectDenied(
+  attempt: () => Promise<unknown>,
+  status: 401 | 403,
+) {
   await assert.rejects(
-    authorizeMarketplaceAccount(undefined, 'client', async () => {
-      queried = true
-      return {
-        authSubject: 'subject-1',
-        role: 'client' as const,
-        isActive: true,
+    attempt(),
+    (error) =>
+      error instanceof MarketplaceAccountAccessError &&
+      error.status === status &&
+      error.message === (status === 401 ? 'Unauthorized' : 'Forbidden'),
+  )
+}
+
+test('missing identity and unverified email fail before account lookup', async () => {
+  for (const authorize of Object.values(accessors)) {
+    let lookups = 0
+    const findAccount = async () => {
+      lookups += 1
+      return approved
+    }
+    await expectDenied(() => authorize(undefined, findAccount), 401)
+    await expectDenied(() => authorize(null, findAccount), 401)
+    await expectDenied(
+      () => authorize({ id: '', emailVerified: true }, findAccount),
+      401,
+    )
+    await expectDenied(
+      () => authorize({ id: identity.id, emailVerified: false }, findAccount),
+      403,
+    )
+    assert.equal(lookups, 0)
+  }
+})
+
+test('missing and mismatched account rows return generic denial', async () => {
+  for (const authorize of Object.values(accessors)) {
+    await expectDenied(() => authorize(identity, async () => undefined), 403)
+    await expectDenied(
+      () =>
+        authorize(identity, async () => ({
+          ...approved,
+          authSubject: 'someone-else',
+        })),
+      403,
+    )
+  }
+})
+
+test('each active account state grants only its intended access', async () => {
+  const cases: {
+    record: MarketplaceAccountRecord
+    permitted: keyof typeof accessors | null
+  }[] = [
+    { record: client, permitted: 'client' },
+    { record: pending, permitted: 'onboarding' },
+    { record: rejected, permitted: 'onboarding' },
+    { record: approved, permitted: 'approved' },
+    { record: { ...client, approvalStatus: 'pending' }, permitted: null },
+    { record: { ...client, approvalStatus: 'approved' }, permitted: null },
+    { record: { ...client, approvalStatus: 'rejected' }, permitted: null },
+    { record: { ...pending, approvalStatus: null }, permitted: null },
+  ]
+
+  for (const { record, permitted } of cases) {
+    for (const [access, authorize] of Object.entries(accessors)) {
+      const findAccount = async (subject: string) => {
+        assert.equal(subject, identity.id)
+        return record
       }
-    }),
-    (error) =>
-      error instanceof MarketplaceAccountAccessError && error.status === 401,
-  )
-  assert.equal(queried, false)
-})
-
-test('a session without an active account cannot gain access', async () => {
-  for (const account of [
-    undefined,
-    { authSubject: 'subject-1', role: 'client' as const, isActive: false },
-  ]) {
-    await assert.rejects(
-      authorizeMarketplaceAccount('subject-1', 'client', async () => account),
-      (error) =>
-        error instanceof MarketplaceAccountAccessError && error.status === 403,
-    )
+      if (access === permitted) {
+        assert.equal(await authorize(identity, findAccount), record)
+      } else {
+        await expectDenied(() => authorize(identity, findAccount), 403)
+      }
+    }
   }
 })
 
-test('a client session cannot access professional operations', async () => {
-  await assert.rejects(
-    authorizeMarketplaceAccount('subject-1', 'professional', async () => ({
-      authSubject: 'subject-1',
-      role: 'client',
-      isActive: true,
-    })),
-    (error) =>
-      error instanceof MarketplaceAccountAccessError && error.status === 403,
-  )
-})
-
-test('a resolver result for another identity is denied', async () => {
-  await assert.rejects(
-    authorizeMarketplaceAccount('subject-1', 'client', async () => ({
-      authSubject: 'subject-2',
-      role: 'client',
-      isActive: true,
-    })),
-    (error) =>
-      error instanceof MarketplaceAccountAccessError && error.status === 403,
-  )
-})
-
-test('an active account can access only its own role', async () => {
-  const professional = {
-    authSubject: 'subject-2',
-    role: 'professional' as const,
-    isActive: true,
+test('suspended and closed accounts are denied at every access level', async () => {
+  for (const account of [client, pending, rejected, approved]) {
+    for (const status of ['suspended', 'closed'] as const) {
+      for (const authorize of Object.values(accessors)) {
+        await expectDenied(
+          () => authorize(identity, async () => ({ ...account, status })),
+          403,
+        )
+      }
+    }
   }
+})
+
+test('untrusted identity extras cannot override the resolved role or approval', async () => {
+  const forged = {
+    ...identity,
+    role: 'professional',
+    approvalStatus: 'approved',
+    status: 'active',
+  }
+  await expectDenied(
+    () => authorizeApprovedProfessional(forged, async () => client),
+    403,
+  )
+  await expectDenied(
+    () => authorizeApprovedProfessional(forged, async () => pending),
+    403,
+  )
+  await expectDenied(
+    () => authorizeClientAccount(forged, async () => approved),
+    403,
+  )
+})
+
+test('approval and status cannot be inferred from an unrelated public listing', async () => {
+  const record = {
+    ...pending,
+    publicationStatus: 'published',
+    verificationStatus: 'verified',
+  }
+  await expectDenied(
+    () => authorizeApprovedProfessional(identity, async () => record),
+    403,
+  )
   assert.equal(
-    await authorizeMarketplaceAccount(
-      'subject-2',
-      'professional',
-      async (id) => {
-        assert.equal(id, 'subject-2')
-        return professional
-      },
-    ),
-    professional,
+    await authorizeProfessionalOnboarding(identity, async () => record),
+    record,
   )
 })
 
-test('professional onboarding access does not require approval', async () => {
-  const pending = {
-    authSubject: 'subject-2',
-    role: 'professional' as const,
-    isActive: true,
-    approvalStatus: 'pending' as const,
+test('a verified identity is necessary even for an approved active account', async () => {
+  const unverified: MarketplaceIdentity = {
+    id: identity.id,
+    emailVerified: false,
   }
-  assert.equal(
-    await authorizeMarketplaceAccount(
-      'subject-2',
-      'professional',
-      async () => pending,
-    ),
-    pending,
-  )
-})
-
-test('approved professional operations reject every non-approved state', async () => {
-  for (const approvalStatus of ['pending', 'rejected'] as const) {
-    await assert.rejects(
-      authorizeApprovedProfessional('subject-2', async () => ({
-        authSubject: 'subject-2',
-        role: 'professional',
-        isActive: true,
-        approvalStatus,
-      })),
-      (error) =>
-        error instanceof MarketplaceAccountAccessError && error.status === 403,
-    )
-  }
-})
-
-test('approved professional operations reject clients and suspended accounts', async () => {
-  for (const account of [
-    { authSubject: 'subject-2', role: 'client' as const, isActive: true },
-    {
-      authSubject: 'subject-2',
-      role: 'professional' as const,
-      isActive: false,
-      approvalStatus: 'approved' as const,
-    },
-  ]) {
-    await assert.rejects(
-      authorizeApprovedProfessional('subject-2', async () => account),
-      (error) =>
-        error instanceof MarketplaceAccountAccessError && error.status === 403,
-    )
-  }
-})
-
-test('an active approved professional can access approved operations', async () => {
-  const approved = {
-    authSubject: 'subject-2',
-    role: 'professional' as const,
-    isActive: true,
-    approvalStatus: 'approved' as const,
-  }
-  assert.equal(
-    await authorizeApprovedProfessional('subject-2', async () => approved),
-    approved,
+  await expectDenied(
+    () => authorizeApprovedProfessional(unverified, async () => approved),
+    403,
   )
 })
