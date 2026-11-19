@@ -129,10 +129,24 @@ async function main() {
     }
     identityCreated = true
 
-    await client`
-      INSERT INTO public.admins (auth_subject, email, name, is_active)
-      VALUES (${result.user.id}, ${email}, ${name}, true)
-    `
+    await client.begin(async (transaction) => {
+      const [locked] = await transaction`
+        SELECT id FROM auth."user" WHERE id = ${result.user.id} FOR UPDATE
+      `
+      if (!locked) throw new Error('The authentication identity is missing.')
+      const [membership] = await transaction`
+        SELECT
+          EXISTS(SELECT 1 FROM public.admins WHERE auth_subject = ${result.user.id}) AS administrator,
+          EXISTS(SELECT 1 FROM public.marketplace_accounts WHERE auth_subject = ${result.user.id}) AS marketplace
+      `
+      if (membership.administrator || membership.marketplace) {
+        throw new Error('The authentication identity already has a membership.')
+      }
+      await transaction`
+        INSERT INTO public.admins (auth_subject, email, name, is_active)
+        VALUES (${result.user.id}, ${email}, ${name}, true)
+      `
+    })
 
     const [confirmed] = await client`
       SELECT EXISTS (
