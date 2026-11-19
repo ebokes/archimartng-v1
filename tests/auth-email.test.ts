@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   AuthEmailError,
   createAuthEmailDelivery,
+  createDiagnosticEmailDelivery,
   readAuthEmailConfig,
   renderAuthEmail,
 } from '../src/lib/auth-email'
@@ -191,4 +192,60 @@ test('provider rejection and network failure return only a generic delivery erro
       'DELIVERY_FAILED',
     )
   }
+})
+
+test('development diagnostic contains no auth link or token', async () => {
+  let payload: Record<string, unknown> | undefined
+  const transport: typeof fetch = async (_input, init) => {
+    payload = JSON.parse(String(init?.body))
+    return new Response(null, { status: 200 })
+  }
+  await createDiagnosticEmailDelivery(
+    readAuthEmailConfig(development),
+    transport,
+  )('operator@example.com')
+  assert.equal(payload?.subject, 'Archimart development email diagnostic')
+  assert.deepEqual(payload?.to, ['operator@example.com'])
+  assert.doesNotMatch(
+    String(payload?.html),
+    /https?:|token|reset-password|verify-email/i,
+  )
+  assert.doesNotMatch(
+    String(payload?.text),
+    /https?:|token|reset-password|verify-email/i,
+  )
+})
+
+test('diagnostic refuses missing configuration, production mode, and provider errors', async () => {
+  let calls = 0
+  const transport: typeof fetch = async () => {
+    calls += 1
+    return new Response('private provider response', { status: 422 })
+  }
+  await expectCode(
+    () =>
+      createDiagnosticEmailDelivery(null, transport)('operator@example.com'),
+    'NOT_CONFIGURED',
+  )
+  await expectCode(
+    () =>
+      createDiagnosticEmailDelivery(
+        {
+          ...readAuthEmailConfig(development)!,
+          environment: 'production',
+        },
+        transport,
+      )('operator@example.com'),
+    'NOT_CONFIGURED',
+  )
+  assert.equal(calls, 0)
+  await expectCode(
+    () =>
+      createDiagnosticEmailDelivery(
+        readAuthEmailConfig(development),
+        transport,
+      )('operator@example.com'),
+    'DELIVERY_FAILED',
+  )
+  assert.equal(calls, 1)
 })

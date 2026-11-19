@@ -185,30 +185,59 @@ export function createAuthEmailDelivery(
   ) {
     if (!config) throw new AuthEmailError('NOT_CONFIGURED')
     const safeLink = validateAuthEmailLink(kind, link, token, config.origin)
-    if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(to)) {
-      throw new AuthEmailError('DELIVERY_FAILED')
+    await sendResendEmail(
+      config,
+      transport,
+      to,
+      renderAuthEmail(kind, safeLink),
+    )
+  }
+}
+
+async function sendResendEmail(
+  config: AuthEmailConfig,
+  transport: typeof fetch,
+  to: string,
+  content: { subject: string; text: string; html: string },
+) {
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(to)) {
+    throw new AuthEmailError('DELIVERY_FAILED')
+  }
+  try {
+    const response = await transport('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: config.from,
+        to: [to],
+        reply_to: config.replyTo,
+        ...content,
+      }),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!response.ok) throw new Error()
+  } catch {
+    // Provider responses may include addresses or message data.
+    throw new AuthEmailError('DELIVERY_FAILED')
+  }
+}
+
+export function createDiagnosticEmailDelivery(
+  config: AuthEmailConfig | null,
+  transport: typeof fetch = fetch,
+) {
+  return async function sendDiagnostic(to: string) {
+    if (!config || config.environment !== 'development') {
+      throw new AuthEmailError('NOT_CONFIGURED')
     }
-    const content = renderAuthEmail(kind, safeLink)
-    try {
-      const response = await transport('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: config.from,
-          to: [to],
-          reply_to: config.replyTo,
-          ...content,
-        }),
-        cache: 'no-store',
-        signal: AbortSignal.timeout(10000),
-      })
-      if (!response.ok) throw new Error()
-    } catch {
-      // Do not log provider responses: they may contain addresses or message data.
-      throw new AuthEmailError('DELIVERY_FAILED')
-    }
+    await sendResendEmail(config, transport, to, {
+      subject: 'Archimart development email diagnostic',
+      text: 'This is a test of Archimart development email delivery. No action is needed.',
+      html: '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:Arial,sans-serif;line-height:1.5;padding:24px"><h1 style="font-size:22px">Archimart email diagnostic</h1><p>This is a test of Archimart development email delivery. No action is needed.</p></body></html>',
+    })
   }
 }
