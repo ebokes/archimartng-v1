@@ -29,6 +29,7 @@ export function ApplicationForm() {
     )
   return (
     <form
+      key={state.revision ?? 0}
       action={action}
       className="mt-8 space-y-7 rounded-xl border border-border bg-card p-5 sm:p-8"
     >
@@ -55,6 +56,7 @@ export function ApplicationForm() {
             required
             minLength={2}
             maxLength={160}
+            defaultValue={state.values?.applicantName}
           />
         </label>
         <label className={label}>
@@ -65,15 +67,27 @@ export function ApplicationForm() {
             type="email"
             required
             maxLength={320}
+            defaultValue={state.values?.email}
           />
         </label>
         <label className={label}>
           Phone (optional)
-          <input className={field} name="phone" type="tel" maxLength={40} />
+          <input
+            className={field}
+            name="phone"
+            type="tel"
+            maxLength={40}
+            defaultValue={state.values?.phone}
+          />
         </label>
         <label className={label}>
           Business name (optional)
-          <input className={field} name="businessName" maxLength={160} />
+          <input
+            className={field}
+            name="businessName"
+            maxLength={160}
+            defaultValue={state.values?.businessName}
+          />
         </label>
         <label className={label}>
           Specialty
@@ -83,6 +97,7 @@ export function ApplicationForm() {
             required
             minLength={2}
             maxLength={120}
+            defaultValue={state.values?.specialty}
             placeholder="e.g. Architecture or building"
           />
         </label>
@@ -93,16 +108,27 @@ export function ApplicationForm() {
             name="portfolioUrl"
             type="url"
             maxLength={2048}
+            defaultValue={state.values?.portfolioUrl}
             placeholder="https://example.com"
           />
         </label>
         <label className={label}>
           City (optional)
-          <input className={field} name="city" maxLength={120} />
+          <input
+            className={field}
+            name="city"
+            maxLength={120}
+            defaultValue={state.values?.city}
+          />
         </label>
         <label className={label}>
           State (optional)
-          <input className={field} name="state" maxLength={120} />
+          <input
+            className={field}
+            name="state"
+            maxLength={120}
+            defaultValue={state.values?.state}
+          />
         </label>
         <label className={`${label} sm:col-span-2`}>
           Proposed public biography
@@ -113,6 +139,7 @@ export function ApplicationForm() {
             required
             minLength={20}
             maxLength={10000}
+            defaultValue={state.values?.proposedBio}
             placeholder="Describe your professional background, experience, and the work clients can expect to see on your public profile."
           />
           <span className="mt-2 block text-xs font-normal text-muted-foreground">
@@ -129,6 +156,7 @@ export function ApplicationForm() {
             required
             minLength={20}
             maxLength={4000}
+            defaultValue={state.values?.message}
             placeholder="Tell us why you are applying or share anything our review team should know."
           />
         </label>

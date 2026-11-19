@@ -33,6 +33,7 @@ export function EnquiryForm({
     )
   return (
     <form
+      key={state.revision ?? 0}
       action={action}
       className="mt-9 space-y-5 rounded-xl border border-border bg-card p-6"
     >
@@ -60,6 +61,7 @@ export function EnquiryForm({
             required
             minLength={2}
             maxLength={160}
+            defaultValue={state.values?.name}
           />
         </label>
         <label className={label}>
@@ -70,12 +72,19 @@ export function EnquiryForm({
             type="email"
             required
             maxLength={320}
+            defaultValue={state.values?.email}
           />
         </label>
       </div>
       <label className={label}>
         Phone (optional)
-        <input className={field} name="phone" type="tel" maxLength={40} />
+        <input
+          className={field}
+          name="phone"
+          type="tel"
+          maxLength={40}
+          defaultValue={state.values?.phone}
+        />
       </label>
       <label className={label}>
         Your message
@@ -85,6 +94,7 @@ export function EnquiryForm({
           required
           minLength={20}
           maxLength={4000}
+          defaultValue={state.values?.message}
           rows={5}
         />
       </label>
@@ -95,6 +105,7 @@ export function EnquiryForm({
           name="consentAccepted"
           value="yes"
           required
+          defaultChecked={state.values?.consentAccepted === 'yes'}
         />
         <span>
           I agree that Archimart may use my contact details and message to
