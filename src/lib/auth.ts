@@ -7,6 +7,7 @@ import { authDb } from '@/db/auth-client'
 import { account, session, user, verification } from '@/db/auth-schema'
 import { db } from '@/db'
 import { admins } from '@/db/schema'
+import { createAuthEmailDelivery, readAuthEmailConfig } from './auth-email'
 
 const secret = process.env.BETTER_AUTH_SECRET
 const baseURL = process.env.BETTER_AUTH_URL
@@ -30,6 +31,9 @@ if (!['http:', 'https:'].includes(authUrl.protocol)) {
   throw new Error('BETTER_AUTH_URL must be an HTTP or HTTPS URL.')
 }
 
+const emailConfig = readAuthEmailConfig(process.env)
+const deliverAuthEmail = createAuthEmailDelivery(emailConfig)
+
 export const auth = betterAuth({
   secret,
   baseURL,
@@ -42,7 +46,24 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
     autoSignIn: false,
+    ...(emailConfig && {
+      sendResetPassword: async ({ user, url, token }) =>
+        deliverAuthEmail('password-reset', user.email, url, token),
+    }),
   },
+  ...(emailConfig && {
+    emailVerification: {
+      sendVerificationEmail: async ({
+        user,
+        url,
+        token,
+      }: {
+        user: { email: string }
+        url: string
+        token: string
+      }) => deliverAuthEmail('verification', user.email, url, token),
+    },
+  }),
   disabledPaths: ['/sign-up/email'],
   session: {
     cookieCache: { enabled: false },
