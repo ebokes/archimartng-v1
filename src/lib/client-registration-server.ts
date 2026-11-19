@@ -13,6 +13,7 @@ import { prepareClientAccountCreation } from './client-account-creation'
 import {
   createClientRegistration,
   isClientRegistrationEnabled,
+  type ClientRegistrationDependencies,
 } from './client-registration'
 
 const markerPrefix = 'client-registration:'
@@ -95,33 +96,69 @@ async function recoverIdentity(email: string, password: string) {
   }
 }
 
-const register = createClientRegistration({
-  enabled: () =>
-    isClientRegistrationEnabled(
+function registrationDependencies(): ClientRegistrationDependencies {
+  return {
+    enabled: () =>
+      isClientRegistrationEnabled(
+        process.env,
+        readAuthEmailConfig(process.env)?.environment === 'development',
+      ),
+    createIdentity,
+    async markRecoverable(subject) {
+      await authDb.insert(verification).values({
+        id: randomUUID(),
+        identifier: `${markerPrefix}${subject}`,
+        value: 'pending',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      })
+    },
+    recoverIdentity,
+    createClientAccount: async (subject) =>
+      prepareClientAccountCreation(async () => ({ subject }))(),
+    async clearRecoveryMarker(subject) {
+      await authDb
+        .delete(verification)
+        .where(eq(verification.identifier, `${markerPrefix}${subject}`))
+    },
+    async sendVerification(email) {
+      await auth.api.sendVerificationEmail({
+        body: { email, callbackURL: '/' },
+      })
+    },
+  }
+}
+
+const register = createClientRegistration(registrationDependencies())
+
+// Kept out of the HTTP route graph. This creates real development records but
+// suppresses email and can inject one account-write failure for integration tests.
+export function prepareClientRegistrationDevelopmentCheck(
+  failAccountOnce = false,
+) {
+  if (
+    process.env.NODE_ENV !== 'development' ||
+    process.env.VERCEL_ENV ||
+    !isClientRegistrationEnabled(
       process.env,
       readAuthEmailConfig(process.env)?.environment === 'development',
-    ),
-  createIdentity,
-  async markRecoverable(subject) {
-    await authDb.insert(verification).values({
-      id: randomUUID(),
-      identifier: `${markerPrefix}${subject}`,
-      value: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    })
-  },
-  recoverIdentity,
-  createClientAccount: async (subject) =>
-    prepareClientAccountCreation(async () => ({ subject }))(),
-  async clearRecoveryMarker(subject) {
-    await authDb
-      .delete(verification)
-      .where(eq(verification.identifier, `${markerPrefix}${subject}`))
-  },
-  async sendVerification(email) {
-    await auth.api.sendVerificationEmail({ body: { email, callbackURL: '/' } })
-  },
-})
+    )
+  ) {
+    throw new Error('Development registration check unavailable')
+  }
+  const dependencies = registrationDependencies()
+  let fail = failAccountOnce
+  return createClientRegistration({
+    ...dependencies,
+    async createClientAccount(subject) {
+      if (fail) {
+        fail = false
+        throw new Error('Injected account-write failure')
+      }
+      return dependencies.createClientAccount(subject)
+    },
+    sendVerification: async () => {},
+  })
+}
 
 // Only a future reviewed server-side registration action may call this.
 export const registerClientInTrustedFlow = register
