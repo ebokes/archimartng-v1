@@ -24,4 +24,13 @@ test('mounted Better Auth handler rejects a direct email sign-up request', async
     }),
   )
   assert.equal(response.status, 404)
+
+  // Better Auth rejects malformed verification tokens before any user lookup.
+  await assert.rejects(
+    auth.api.verifyEmail({ query: { token: 'invalid' } }),
+    (error: unknown) =>
+      error instanceof Error &&
+      'status' in error &&
+      error.status === 'UNAUTHORIZED',
+  )
 })
