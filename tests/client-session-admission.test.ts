@@ -98,7 +98,7 @@ test('client admission requires the local gate, verification, and consistent act
   assert.equal(mayCreateSession(undefined, true), false)
 })
 
-test('client session switch cannot turn on in Vercel or without explicit local flag', () => {
+test('client session switch requires local flag and shared limiter, and cannot turn on in Vercel', () => {
   assert.equal(
     isClientSessionAdmissionEnabled({ NODE_ENV: 'development' }),
     false,
@@ -108,12 +108,21 @@ test('client session switch cannot turn on in Vercel or without explicit local f
       NODE_ENV: 'development',
       MARKETPLACE_CLIENT_SESSION_ENABLED: 'true',
     }),
+    false,
+  )
+  assert.equal(
+    isClientSessionAdmissionEnabled({
+      NODE_ENV: 'development',
+      MARKETPLACE_CLIENT_SESSION_ENABLED: 'true',
+      ACCOUNT_RATE_LIMIT_ENABLED: 'true',
+    }),
     true,
   )
   assert.equal(
     isClientSessionAdmissionEnabled({
       NODE_ENV: 'production',
       MARKETPLACE_CLIENT_SESSION_ENABLED: 'true',
+      ACCOUNT_RATE_LIMIT_ENABLED: 'true',
     }),
     false,
   )
@@ -122,6 +131,7 @@ test('client session switch cannot turn on in Vercel or without explicit local f
       NODE_ENV: 'development',
       VERCEL_ENV: 'preview',
       MARKETPLACE_CLIENT_SESSION_ENABLED: 'true',
+      ACCOUNT_RATE_LIMIT_ENABLED: 'true',
     }),
     false,
   )

@@ -17,13 +17,22 @@ export function RegistrationForm() {
 
   if (state.status === 'accepted') {
     return (
-      <p
+      <div
         role="status"
         className="rounded-lg border border-border p-5 text-sm leading-6"
       >
-        If we can create your account, you’ll receive a verification email.
-        Check your inbox before signing in.
-      </p>
+        <p className="font-semibold">Check your email</p>
+        <p className="mt-2">
+          If we can create your account, you’ll receive a verification email.
+          Open its link before signing in.
+        </p>
+        <Link
+          href="/account/sign-in"
+          className="mt-4 inline-block font-medium underline"
+        >
+          Go to client sign in
+        </Link>
+      </div>
     )
   }
 
@@ -100,6 +109,13 @@ export function RegistrationForm() {
       <Button type="submit" disabled={pending} className="w-full">
         {pending ? 'Submitting…' : 'Create client account'}
       </Button>
+      <p className="text-sm text-muted-foreground">
+        Already verified?{' '}
+        <Link href="/account/sign-in" className="font-medium underline">
+          Sign in
+        </Link>
+        .
+      </p>
       <p className="text-xs leading-5 text-muted-foreground">
         We use your details to manage your account. Read our{' '}
         <Link href="/privacy" className="underline">

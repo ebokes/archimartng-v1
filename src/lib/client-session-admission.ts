@@ -13,6 +13,7 @@ export function isClientSessionAdmissionEnabled(
 ) {
   return (
     env.MARKETPLACE_CLIENT_SESSION_ENABLED === 'true' &&
+    env.ACCOUNT_RATE_LIMIT_ENABLED === 'true' &&
     env.NODE_ENV === 'development' &&
     !env.VERCEL_ENV
   )
