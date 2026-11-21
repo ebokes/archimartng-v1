@@ -76,6 +76,15 @@ export const auth = betterAuth({
   }),
   disabledPaths: ['/sign-up/email'],
   ...(isAccountRateLimitReady() && {
+    advanced: {
+      ipAddress: {
+        // Local requests share one bucket; ignore client-supplied forwarding
+        // headers. Vercel supplies its own forwarded address at the edge.
+        ipAddressHeaders: process.env.VERCEL_ENV
+          ? ['x-vercel-forwarded-for']
+          : [],
+      },
+    },
     rateLimit: {
       enabled: true,
       customStorage: betterAuthRateLimitStorage(),
