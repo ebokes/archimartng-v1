@@ -10,7 +10,7 @@ import { createAccountRateLimiter, type LimitRule } from './account-rate-limit'
 export async function consumeAccountCounter(keyHash: string, rule: LimitRule) {
   const rows = await authDb.execute<{
     attempts: number
-    expires_at: Date
+    expires_at: Date | string
   }>(sql`
     INSERT INTO account_rate_limits (key_hash, attempts, window_started_at, expires_at)
     VALUES (${keyHash}, 1, now(), now() + ${rule.windowSeconds} * interval '1 second')
@@ -32,7 +32,10 @@ export async function consumeAccountCounter(keyHash: string, rule: LimitRule) {
   `)
   const row = rows[0]
   if (!row) throw new Error('Rate limiter unavailable')
-  return { attempts: row.attempts, expiresAt: row.expires_at }
+  const expiresAt = new Date(row.expires_at)
+  if (!Number.isFinite(expiresAt.getTime()))
+    throw new Error('Rate limiter unavailable')
+  return { attempts: row.attempts, expiresAt }
 }
 
 export function isAccountRateLimitReady(
