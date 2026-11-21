@@ -14,6 +14,10 @@ import {
   isLegacyAdminSessionLookup,
 } from './client-session-admission'
 import { hasMarketplaceMembership } from './marketplace-membership'
+import {
+  betterAuthRateLimitStorage,
+  isAccountRateLimitReady,
+} from './account-rate-limit-store'
 
 const secret = process.env.BETTER_AUTH_SECRET
 const baseURL = process.env.BETTER_AUTH_URL
@@ -71,6 +75,19 @@ export const auth = betterAuth({
     },
   }),
   disabledPaths: ['/sign-up/email'],
+  ...(isAccountRateLimitReady() && {
+    rateLimit: {
+      enabled: true,
+      customStorage: betterAuthRateLimitStorage(),
+      customRules: {
+        '/sign-in/email': { window: 900, max: 5 },
+        '/send-verification-email': { window: 3600, max: 10 },
+        '/request-password-reset': { window: 3600, max: 10 },
+        '/reset-password': { window: 900, max: 10 },
+        '/verify-email': { window: 900, max: 20 },
+      },
+    },
+  }),
   session: {
     cookieCache: { enabled: false },
   },

@@ -11,7 +11,11 @@ export const metadata: Metadata = {
 }
 
 export default function ClientRegistrationPage() {
-  if (!isLocalClientRegistrationAvailable()) notFound()
+  if (
+    !isLocalClientRegistrationAvailable() ||
+    process.env.ACCOUNT_RATE_LIMIT_ENABLED !== 'true'
+  )
+    notFound()
 
   return (
     <main className="min-h-screen bg-background px-5 py-16 text-foreground sm:px-8">

@@ -87,6 +87,11 @@ export function RegistrationForm() {
           Registration is not available right now.
         </p>
       )}
+      {state.status === 'limited' && (
+        <p role="alert" className="text-sm text-destructive">
+          Too many requests. Please try again later.
+        </p>
+      )}
       {state.status === 'error' && (
         <p role="alert" className="text-sm text-destructive">
           We could not process your request. Please try again later.

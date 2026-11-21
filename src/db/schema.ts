@@ -427,3 +427,19 @@ export const professionalAccountEvents = pgTable(
     ),
   ],
 )
+
+export const accountRateLimits = pgTable(
+  'account_rate_limits',
+  {
+    keyHash: text('key_hash').primaryKey(),
+    attempts: integer('attempts').notNull(),
+    windowStartedAt: timestamp('window_started_at', {
+      withTimezone: true,
+    }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index('account_rate_limits_expires_at_idx').on(table.expiresAt),
+    check('account_rate_limits_attempts_positive', sql`${table.attempts} > 0`),
+  ],
+)
