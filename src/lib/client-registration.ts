@@ -33,8 +33,8 @@ export function isClientRegistrationEnabled(
 ) {
   return (
     env.MARKETPLACE_CLIENT_REGISTRATION_ENABLED === 'true' &&
-    (env.VERCEL_ENV === 'preview' ||
-      (env.VERCEL_ENV === undefined && env.NODE_ENV === 'development')) &&
+    !env.VERCEL_ENV &&
+    env.NODE_ENV === 'development' &&
     developmentEmailReady
   )
 }

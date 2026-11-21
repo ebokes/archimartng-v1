@@ -228,7 +228,7 @@ test('registration gate is disabled by default and never opens in Production', a
       },
       true,
     ),
-    true,
+    false,
   )
   assert.equal(
     isClientRegistrationEnabled(

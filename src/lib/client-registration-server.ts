@@ -7,12 +7,11 @@ import { verifyPassword } from 'better-auth/crypto'
 import { and, eq, gt } from 'drizzle-orm'
 import { authDb } from '@/db/auth-client'
 import { account, session, user, verification } from '@/db/auth-schema'
-import { readAuthEmailConfig } from './auth-email'
+import { isLocalClientRegistrationAvailable } from './client-registration-gate'
 import { auth } from './auth'
 import { prepareClientAccountCreation } from './client-account-creation'
 import {
   createClientRegistration,
-  isClientRegistrationEnabled,
   type ClientRegistrationDependencies,
 } from './client-registration'
 
@@ -98,11 +97,7 @@ async function recoverIdentity(email: string, password: string) {
 
 function registrationDependencies(): ClientRegistrationDependencies {
   return {
-    enabled: () =>
-      isClientRegistrationEnabled(
-        process.env,
-        readAuthEmailConfig(process.env)?.environment === 'development',
-      ),
+    enabled: () => isLocalClientRegistrationAvailable(),
     createIdentity,
     async markRecoverable(subject) {
       await authDb.insert(verification).values({
@@ -138,10 +133,7 @@ export function prepareClientRegistrationDevelopmentCheck(
   if (
     process.env.NODE_ENV !== 'development' ||
     process.env.VERCEL_ENV ||
-    !isClientRegistrationEnabled(
-      process.env,
-      readAuthEmailConfig(process.env)?.environment === 'development',
-    )
+    !isLocalClientRegistrationAvailable()
   ) {
     throw new Error('Development registration check unavailable')
   }

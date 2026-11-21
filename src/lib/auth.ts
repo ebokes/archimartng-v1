@@ -2,12 +2,18 @@ import 'server-only'
 
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { betterAuth } from 'better-auth/minimal'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { authDb } from '@/db/auth-client'
 import { account, session, user, verification } from '@/db/auth-schema'
 import { db } from '@/db'
-import { admins } from '@/db/schema'
+import { admins, marketplaceAccounts, professionalAccounts } from '@/db/schema'
 import { createAuthEmailDelivery, readAuthEmailConfig } from './auth-email'
+import {
+  createSessionAdmissionGate,
+  isClientSessionAdmissionEnabled,
+  isLegacyAdminSessionLookup,
+} from './client-session-admission'
+import { hasMarketplaceMembership } from './marketplace-membership'
 
 const secret = process.env.BETTER_AUTH_SECRET
 const baseURL = process.env.BETTER_AUTH_URL
@@ -71,20 +77,59 @@ export const auth = betterAuth({
   databaseHooks: {
     session: {
       create: {
-        before: async (newSession) => {
-          const [admin] = await db
-            .select({ id: admins.id })
-            .from(admins)
-            .where(
-              and(
-                eq(admins.authSubject, newSession.userId),
-                eq(admins.isActive, true),
-              ),
-            )
-            .limit(1)
-
-          if (!admin) return false
-        },
+        before: createSessionAdmissionGate({
+          clientEnabled: () => isClientSessionAdmissionEnabled(process.env),
+          async findState(subject) {
+            // Production account-schema state is unverified. Keep V1 admin
+            // admission independent of the new table, while rejecting overlap
+            // if that table is present. No client admission is allowed here.
+            if (isLegacyAdminSessionLookup(process.env)) {
+              const [admin] = await db
+                .select({ isActive: admins.isActive })
+                .from(admins)
+                .where(eq(admins.authSubject, subject))
+                .limit(1)
+              if (!admin) return undefined
+              if (!admin.isActive)
+                return {
+                  emailVerified: false,
+                  administratorIsActive: false,
+                  marketplaceRole: null,
+                  marketplaceStatus: null,
+                  professionalApproval: null,
+                }
+              if (await hasMarketplaceMembership(subject)) return undefined
+              return {
+                emailVerified: false,
+                administratorIsActive: true,
+                marketplaceRole: null,
+                marketplaceStatus: null,
+                professionalApproval: null,
+              }
+            }
+            const [state] = await db
+              .select({
+                emailVerified: user.emailVerified,
+                administratorIsActive: admins.isActive,
+                marketplaceRole: marketplaceAccounts.role,
+                marketplaceStatus: marketplaceAccounts.status,
+                professionalApproval: professionalAccounts.approvalStatus,
+              })
+              .from(user)
+              .leftJoin(admins, eq(admins.authSubject, user.id))
+              .leftJoin(
+                marketplaceAccounts,
+                eq(marketplaceAccounts.authSubject, user.id),
+              )
+              .leftJoin(
+                professionalAccounts,
+                eq(professionalAccounts.accountId, marketplaceAccounts.id),
+              )
+              .where(eq(user.id, subject))
+              .limit(1)
+            return state
+          },
+        }),
       },
     },
   },
