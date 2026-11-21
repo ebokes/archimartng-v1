@@ -18,11 +18,12 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-semibold text-foreground">
             Privacy notice
           </h1>
-          <p className="mt-3">Updated 12 November 2026</p>
+          <p className="mt-3">Updated 21 November 2026</p>
           <p className="mt-4">
             Archimart is an admin-managed architecture marketplace. This notice
             explains how the site handles information sent through its
-            professional application and client enquiry forms.
+            professional application and client enquiry forms. It also explains
+            the client account flow being prepared for a later release.
           </p>
         </header>
 
@@ -42,6 +43,35 @@ export default function PrivacyPage() {
             professional you asked about. You may also provide a phone number.
             We record when you accepted the enquiry consent statement, its
             version, the enquiry status, and internal follow-up notes.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-foreground">
+            Client accounts when registration opens
+          </h2>
+          <p className="mt-2">
+            Public client registration is currently disabled. When it opens, we
+            will use your name and email address to create and manage your
+            account. Better Auth stores a password hash, email verification
+            status, and sign-in sessions; Archimart does not store your plain
+            password. Your marketplace account records its client role and
+            whether access is active, suspended, or closed. Administrators may
+            access account status when managing access or privacy requests.
+          </p>
+          <p className="mt-3">
+            We use Resend to deliver account verification and password recovery
+            emails. Verification and recovery links contain temporary tokens. A
+            verification email confirms control of an address; it does not grant
+            administrator access. Account emails are for access and recovery,
+            not marketing.
+          </p>
+          <p className="mt-3">
+            Account and security-event retention periods are still being
+            reviewed and will be published before public registration opens. You
+            can request access, correction, or closure through the contact
+            below. Closure may not immediately erase records that must be kept
+            for a dispute, complaint, or other lawful obligation.
           </p>
         </section>
 
@@ -73,11 +103,13 @@ export default function PrivacyPage() {
             Storage and access
           </h2>
           <p className="mt-2">
-            The site runs on Vercel and stores submitted application and enquiry
-            records in Neon PostgreSQL. Within the Archimart application, only
-            signed-in administrators with an active administrator record can
-            view submissions and internal notes. Public pages show only profiles
-            and plans that administrators have published.
+            The site runs on Vercel and stores submitted application, enquiry,
+            and authentication records in Neon PostgreSQL. Account emails are
+            delivered through Resend when configured. Within the Archimart
+            application, only signed-in administrators with an active
+            administrator record can view submissions and internal notes. Public
+            pages show only profiles and plans that administrators have
+            published.
           </p>
         </section>
 
