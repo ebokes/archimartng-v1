@@ -77,6 +77,11 @@ test('valid clients and professionals receive only their permitted access', asyn
     await resolver(approved).requireApprovedProfessional(),
     approved,
   )
+  assert.deepEqual(await resolver(pending).requireProfessionalStatus(), pending)
+  assert.deepEqual(
+    await resolver(approved).requireProfessionalStatus(),
+    approved,
+  )
 
   await expectDenied(() => resolver(client).requireApprovedProfessional(), 403)
   await expectDenied(() => resolver(pending).requireApprovedProfessional(), 403)
@@ -85,6 +90,7 @@ test('valid clients and professionals receive only their permitted access', asyn
     403,
   )
   await expectDenied(() => resolver(approved).requireClient(), 403)
+  await expectDenied(() => resolver(client).requireProfessionalStatus(), 403)
 })
 
 test('missing sessions, missing accounts and unverified email fail closed', async () => {

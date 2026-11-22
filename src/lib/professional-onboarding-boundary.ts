@@ -14,6 +14,7 @@ type LockedIdentity = {
   exists: boolean
   emailVerified: boolean
   hasAdministratorRecord: () => Promise<boolean>
+  hasPotentialPriorActivity: () => Promise<boolean>
   findAccount: () => Promise<{
     id: string
     authSubject: string
@@ -80,6 +81,8 @@ export function createProfessionalOnboardingBoundary(
             emailVerified: identity.emailVerified && locked.emailVerified,
             hasProfessionalAccount: authorized.hasProfessionalAccount,
           })
+          if (await locked.hasPotentialPriorActivity())
+            throw new ProfessionalOnboardingError()
 
           if (!(await locked.changeRoleToProfessional(authorized.id)))
             throw new ProfessionalOnboardingError()

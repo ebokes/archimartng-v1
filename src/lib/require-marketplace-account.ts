@@ -54,4 +54,5 @@ const resolver = createMarketplaceAccountResolver({
 export const requireClientAccount = resolver.requireClient
 export const requireProfessionalOnboarding =
   resolver.requireProfessionalOnboarding
+export const requireProfessionalStatus = resolver.requireProfessionalStatus
 export const requireApprovedProfessional = resolver.requireApprovedProfessional

@@ -4,6 +4,7 @@ import {
   authorizeApprovedProfessional,
   authorizeClientAccount,
   authorizeProfessionalOnboarding,
+  authorizeProfessionalStatus,
   MarketplaceAccountAccessError,
   type MarketplaceAccountRecord,
   type MarketplaceIdentity,
@@ -106,6 +107,22 @@ test('each active account state grants only its intended access', async () => {
       }
     }
   }
+})
+
+test('professional status access reads each approval state without granting approved operations', async () => {
+  for (const record of [pending, rejected, approved])
+    assert.equal(
+      await authorizeProfessionalStatus(identity, async () => record),
+      record,
+    )
+  await expectDenied(
+    () => authorizeProfessionalStatus(identity, async () => client),
+    403,
+  )
+  await expectDenied(
+    () => authorizeApprovedProfessional(identity, async () => pending),
+    403,
+  )
 })
 
 test('suspended and closed accounts are denied at every access level', async () => {

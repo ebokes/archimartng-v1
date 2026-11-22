@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { clientPageAccess } from '@/lib/client-page-access'
+import { mayStartDisposableProfessionalOnboarding } from '@/lib/professional-onboarding-gate'
 import { requireClientAccount } from '@/lib/require-marketplace-account'
 import { ClientSignOutButton } from './sign-out-button'
 
@@ -13,8 +14,10 @@ export const metadata: Metadata = {
 
 export default async function ClientDashboard() {
   const access = await clientPageAccess(requireClientAccount)
-  if (access.status === 'sign-in') redirect('/account/sign-in')
-  if (access.status === 'denied') notFound()
+  if (access.status !== 'allowed') {
+    if (access.status === 'sign-in') redirect('/account/sign-in')
+    notFound()
+  }
 
   return (
     <main className="min-h-screen bg-background px-5 py-8 text-foreground sm:px-8">
@@ -43,6 +46,16 @@ export default async function ClientDashboard() {
             >
               Browse plans
             </Link>
+            {mayStartDisposableProfessionalOnboarding(
+              access.account.authSubject,
+            ) && (
+              <Link
+                href="/account/professional/onboard"
+                className="rounded-lg border border-border px-5 py-3 text-sm font-semibold"
+              >
+                Begin professional onboarding
+              </Link>
+            )}
             <Link
               href="/professionals"
               className="rounded-lg border border-border px-5 py-3 text-sm font-semibold"

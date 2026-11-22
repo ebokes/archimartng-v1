@@ -24,6 +24,7 @@ function harness(
     role?: State['role']
     status?: State['status']
     professional?: boolean
+    priorActivity?: boolean
     failAt?: 'lookup' | 'update' | 'insert' | 'event'
   } = {},
 ) {
@@ -58,6 +59,7 @@ function harness(
           exists: options.userExists !== false,
           emailVerified: options.storedVerified !== false,
           hasAdministratorRecord: async () => Boolean(options.admin),
+          hasPotentialPriorActivity: async () => options.priorActivity === true,
           findAccount: async () => {
             if (options.failAt === 'lookup') throw new Error('private SQL')
             return options.missingAccount
@@ -159,6 +161,7 @@ test('missing, mismatched, suspended, closed and inconsistent accounts are denie
     { status: 'closed' as const },
     { role: 'professional' as const },
     { professional: true },
+    { priorActivity: true },
   ]) {
     const h = harness(options)
     await denied(h.start)

@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { authClient } from '@/lib/auth-browser'
 
-export function ClientSignOutButton() {
+export function ClientSignOutButton({
+  destination = '/account/sign-in',
+}: {
+  destination?: '/account/sign-in' | '/account/professional/sign-in'
+}) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(false)
@@ -20,7 +24,7 @@ export function ClientSignOutButton() {
         setError(true)
         return
       }
-      router.replace('/account/sign-in')
+      router.replace(destination)
       router.refresh()
     } catch {
       setError(true)

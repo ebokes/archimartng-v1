@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:auth": "node --conditions=react-server --import=tsx --test tests/admin-authorization.test.ts tests/marketplace-account-authorization.test.ts tests/marketplace-account-lifecycle.test.ts tests/marketplace-account-resolver.test.ts tests/client-account-creation-boundary.test.ts tests/client-registration.test.ts tests/client-registration-gate.test.ts tests/client-session-admission.test.ts tests/client-page-access.test.ts tests/public-signup-disabled.test.ts tests/professional-onboarding-boundary.test.ts",
+    "test:auth": "node --conditions=react-server --import=tsx --test tests/admin-authorization.test.ts tests/marketplace-account-authorization.test.ts tests/marketplace-account-lifecycle.test.ts tests/marketplace-account-resolver.test.ts tests/client-account-creation-boundary.test.ts tests/client-registration.test.ts tests/client-registration-gate.test.ts tests/client-session-admission.test.ts tests/client-page-access.test.ts tests/public-signup-disabled.test.ts tests/professional-onboarding-boundary.test.ts tests/professional-onboarding-page.test.ts",
     "test:email": "node --conditions=react-server --import=tsx --test tests/auth-email.test.ts tests/marketplace-account-email-requests.test.ts",
     "test:account-limit": "node --conditions=react-server --import=tsx --test tests/account-rate-limit.test.ts tests/password-reset-token.test.ts tests/protected-auth-post.test.ts",
     "email:check": "node --conditions=react-server --import=tsx scripts/check-auth-email.ts",

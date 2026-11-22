@@ -25,7 +25,11 @@ export class MarketplaceAccountAccessError extends Error {
   }
 }
 
-type Access = 'client' | 'professional_onboarding' | 'approved_professional'
+type Access =
+  | 'client'
+  | 'professional_status'
+  | 'professional_onboarding'
+  | 'approved_professional'
 
 async function authorizeMarketplaceAccount<T extends MarketplaceAccountRecord>(
   identity: MarketplaceIdentity | null | undefined,
@@ -48,6 +52,11 @@ async function authorizeMarketplaceAccount<T extends MarketplaceAccountRecord>(
     (access === 'client' &&
       account.role === 'client' &&
       account.approvalStatus === null) ||
+    (access === 'professional_status' &&
+      account.role === 'professional' &&
+      (account.approvalStatus === 'pending' ||
+        account.approvalStatus === 'rejected' ||
+        account.approvalStatus === 'approved')) ||
     (access === 'professional_onboarding' &&
       account.role === 'professional' &&
       (account.approvalStatus === 'pending' ||
@@ -76,6 +85,17 @@ export function authorizeProfessionalOnboarding<
   return authorizeMarketplaceAccount(
     identity,
     'professional_onboarding',
+    findAccount,
+  )
+}
+
+export function authorizeProfessionalStatus<T extends MarketplaceAccountRecord>(
+  identity: MarketplaceIdentity | null | undefined,
+  findAccount: (subject: string) => Promise<T | undefined>,
+): Promise<T> {
+  return authorizeMarketplaceAccount(
+    identity,
+    'professional_status',
     findAccount,
   )
 }

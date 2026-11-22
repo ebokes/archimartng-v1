@@ -7,7 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { authClient } from '@/lib/auth-browser'
 
-export function ClientSignInForm() {
+export function ClientSignInForm({
+  destination = '/account',
+}: {
+  destination?: '/account' | '/account/professional/status'
+}) {
   const router = useRouter()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -29,7 +33,7 @@ export function ClientSignInForm() {
         )
         return
       }
-      router.replace('/account')
+      router.replace(destination)
       router.refresh()
     } catch {
       setError('Sign in is unavailable right now. Please try again.')

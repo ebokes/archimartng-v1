@@ -4,6 +4,7 @@ import {
   authorizeApprovedProfessional,
   authorizeClientAccount,
   authorizeProfessionalOnboarding,
+  authorizeProfessionalStatus,
   MarketplaceAccountAccessError,
   type MarketplaceAccountRecord,
   type MarketplaceIdentity,
@@ -66,6 +67,9 @@ export function createMarketplaceAccountResolver(dependencies: Dependencies) {
     },
     async requireProfessionalOnboarding() {
       return authorizeProfessionalOnboarding(await getIdentity(), findAccount)
+    },
+    async requireProfessionalStatus() {
+      return authorizeProfessionalStatus(await getIdentity(), findAccount)
     },
     async requireApprovedProfessional() {
       return authorizeApprovedProfessional(await getIdentity(), findAccount)

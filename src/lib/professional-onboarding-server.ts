@@ -6,27 +6,32 @@ import { authDb } from '@/db/auth-client'
 import { user } from '@/db/auth-schema'
 import {
   admins,
+  enquiries,
   marketplaceAccounts,
   professionalAccountEvents,
   professionalAccounts,
+  professionalApplications,
 } from '@/db/schema'
 import { auth } from './auth'
 import {
-  isProfessionalOnboardingEnabled,
-  isProfessionalSessionAdmissionEnabled,
-} from './client-session-admission'
+  isDisposableProfessionalOnboardingPageEnabled,
+  isDisposableProfessionalStatusPageEnabled,
+  mayStartDisposableProfessionalOnboarding,
+  mayViewDisposableProfessionalStatus,
+} from './professional-onboarding-gate'
 import {
   createProfessionalOnboardingBoundary,
   ProfessionalOnboardingError,
 } from './professional-onboarding-boundary'
-import { requireProfessionalOnboarding } from './require-marketplace-account'
+import { requireProfessionalStatus } from './require-marketplace-account'
 
-// Deliberately unmounted. A future reviewed action may invoke this operation
-// after its own gate and request checks; the subject always comes from Better Auth.
+// Only the gated local action invokes this operation. The subject always comes
+// from the validated Better Auth session and is rechecked under an identity lock.
 const startInTrustedSession = createProfessionalOnboardingBoundary({
   async getIdentity() {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user) return null
+    if (!mayStartDisposableProfessionalOnboarding(session.user.id)) return null
     return { id: session.user.id, emailVerified: session.user.emailVerified }
   },
   withLockedIdentity: (subject, operation) =>
@@ -36,7 +41,7 @@ const startInTrustedSession = createProfessionalOnboardingBoundary({
         sql`SELECT id FROM auth."user" WHERE id = ${subject} FOR UPDATE`,
       )
       const [identity] = await tx
-        .select({ emailVerified: user.emailVerified })
+        .select({ emailVerified: user.emailVerified, email: user.email })
         .from(user)
         .where(eq(user.id, subject))
         .limit(1)
@@ -51,6 +56,24 @@ const startInTrustedSession = createProfessionalOnboardingBoundary({
             .where(eq(admins.authSubject, subject))
             .limit(1)
           return Boolean(row)
+        },
+        async hasPotentialPriorActivity() {
+          if (!identity?.email) return true
+          // Conservative safety check only. Matching an email does not prove
+          // ownership, and these records are never linked to the new account.
+          const [priorEnquiry] = await tx
+            .select({ id: enquiries.id })
+            .from(enquiries)
+            .where(sql`lower(${enquiries.email}) = lower(${identity.email})`)
+            .limit(1)
+          const [priorApplication] = await tx
+            .select({ id: professionalApplications.id })
+            .from(professionalApplications)
+            .where(
+              sql`lower(${professionalApplications.email}) = lower(${identity.email})`,
+            )
+            .limit(1)
+          return Boolean(priorEnquiry || priorApplication)
         },
         async findAccount() {
           const [row] = await tx
@@ -107,16 +130,24 @@ const startInTrustedSession = createProfessionalOnboardingBoundary({
 })
 
 export async function startProfessionalOnboarding() {
-  if (!isProfessionalOnboardingEnabled(process.env))
+  if (!isDisposableProfessionalOnboardingPageEnabled())
     throw new ProfessionalOnboardingError()
   return startInTrustedSession()
 }
 
-// Future status pages can expose only the current pending/rejected decision.
-// The resolver gets the subject from the session and denies approved-only work.
+// The private status page exposes only the current decision for its own subject.
+// The resolver checks the session and account state; approval grants no profile access.
 export async function getOwnProfessionalOnboardingStatus() {
-  if (!isProfessionalSessionAdmissionEnabled(process.env))
+  if (!isDisposableProfessionalStatusPageEnabled())
     throw new ProfessionalOnboardingError()
-  const account = await requireProfessionalOnboarding()
+  const account = await requireProfessionalStatus()
+  if (!mayViewDisposableProfessionalStatus(account.authSubject))
+    throw new ProfessionalOnboardingError()
+  if (
+    account.approvalStatus !== 'pending' &&
+    account.approvalStatus !== 'rejected' &&
+    account.approvalStatus !== 'approved'
+  )
+    throw new ProfessionalOnboardingError()
   return { approvalStatus: account.approvalStatus }
 }
