@@ -19,6 +19,26 @@ export function isClientSessionAdmissionEnabled(
   )
 }
 
+export function isProfessionalSessionAdmissionEnabled(
+  env: Record<string, string | undefined>,
+) {
+  return (
+    env.MARKETPLACE_PROFESSIONAL_SESSION_ENABLED === 'true' &&
+    env.ACCOUNT_RATE_LIMIT_ENABLED === 'true' &&
+    env.NODE_ENV === 'development' &&
+    !env.VERCEL_ENV
+  )
+}
+
+export function isProfessionalOnboardingEnabled(
+  env: Record<string, string | undefined>,
+) {
+  return (
+    isClientSessionAdmissionEnabled(env) &&
+    isProfessionalSessionAdmissionEnabled(env)
+  )
+}
+
 export function isLegacyAdminSessionLookup(
   env: Record<string, string | undefined>,
 ) {
@@ -28,6 +48,7 @@ export function isLegacyAdminSessionLookup(
 export function mayCreateSession(
   state: SessionAdmissionState | undefined,
   clientSessionEnabled: boolean,
+  professionalSessionEnabled = false,
 ) {
   if (!state) return false
   // An administrator record of any status excludes marketplace membership.
@@ -39,23 +60,36 @@ export function mayCreateSession(
       state.professionalApproval === null
     )
   }
+  if (state.emailVerified !== true || state.marketplaceStatus !== 'active')
+    return false
   return (
-    clientSessionEnabled &&
-    state.emailVerified === true &&
-    state.marketplaceRole === 'client' &&
-    state.marketplaceStatus === 'active' &&
-    state.professionalApproval === null
+    (clientSessionEnabled &&
+      state.marketplaceRole === 'client' &&
+      state.professionalApproval === null) ||
+    (professionalSessionEnabled &&
+      state.marketplaceRole === 'professional' &&
+      (state.professionalApproval === 'pending' ||
+        state.professionalApproval === 'rejected' ||
+        state.professionalApproval === 'approved'))
   )
 }
 
 export function createSessionAdmissionGate(dependencies: {
   findState: (subject: string) => Promise<SessionAdmissionState | undefined>
   clientEnabled: () => boolean
+  professionalEnabled?: () => boolean
 }) {
   return async function beforeSessionCreate(newSession: { userId: string }) {
     try {
       const state = await dependencies.findState(newSession.userId)
-      if (!mayCreateSession(state, dependencies.clientEnabled())) return false
+      if (
+        !mayCreateSession(
+          state,
+          dependencies.clientEnabled(),
+          dependencies.professionalEnabled?.() ?? false,
+        )
+      )
+        return false
     } catch {
       return false
     }

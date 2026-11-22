@@ -11,6 +11,7 @@ import { createAuthEmailDelivery, readAuthEmailConfig } from './auth-email'
 import {
   createSessionAdmissionGate,
   isClientSessionAdmissionEnabled,
+  isProfessionalSessionAdmissionEnabled,
   isLegacyAdminSessionLookup,
 } from './client-session-admission'
 import { hasMarketplaceMembership } from './marketplace-membership'
@@ -105,6 +106,8 @@ export const auth = betterAuth({
       create: {
         before: createSessionAdmissionGate({
           clientEnabled: () => isClientSessionAdmissionEnabled(process.env),
+          professionalEnabled: () =>
+            isProfessionalSessionAdmissionEnabled(process.env),
           async findState(subject) {
             // Production account-schema state is unverified. Keep V1 admin
             // admission independent of the new table, while rejecting overlap

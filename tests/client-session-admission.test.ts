@@ -3,6 +3,8 @@ import test from 'node:test'
 import {
   createSessionAdmissionGate,
   isClientSessionAdmissionEnabled,
+  isProfessionalSessionAdmissionEnabled,
+  isProfessionalOnboardingEnabled,
   mayCreateSession,
   isLegacyAdminSessionLookup,
   type SessionAdmissionState,
@@ -96,6 +98,123 @@ test('client admission requires the local gate, verification, and consistent act
     false,
   )
   assert.equal(mayCreateSession(undefined, true), false)
+})
+
+test('professional admission has a separate local gate and preserves approval boundaries', () => {
+  const pending = {
+    ...base,
+    marketplaceRole: 'professional' as const,
+    professionalApproval: 'pending' as const,
+  }
+  assert.equal(mayCreateSession(pending, true), false)
+  for (const professionalApproval of [
+    'pending',
+    'rejected',
+    'approved',
+  ] as const) {
+    assert.equal(
+      mayCreateSession({ ...pending, professionalApproval }, false, true),
+      true,
+    )
+  }
+  for (const change of [
+    { emailVerified: false },
+    { marketplaceStatus: 'suspended' as const },
+    { marketplaceStatus: 'closed' as const },
+    { administratorIsActive: false },
+    { administratorIsActive: true },
+    { professionalApproval: null },
+    { marketplaceRole: 'client' as const },
+  ]) {
+    assert.equal(
+      mayCreateSession({ ...pending, ...change }, false, true),
+      false,
+    )
+  }
+  assert.equal(mayCreateSession(base, false, true), false)
+})
+
+test('session hook admits a pending professional only when its separate gate is on', async () => {
+  const pending = {
+    ...base,
+    marketplaceRole: 'professional' as const,
+    professionalApproval: 'pending' as const,
+  }
+  const enabled = createSessionAdmissionGate({
+    findState: async () => pending,
+    clientEnabled: () => false,
+    professionalEnabled: () => true,
+  })
+  const disabled = createSessionAdmissionGate({
+    findState: async () => pending,
+    clientEnabled: () => true,
+    professionalEnabled: () => false,
+  })
+  assert.equal(await enabled({ userId: 'trusted-subject' }), undefined)
+  assert.equal(await disabled({ userId: 'trusted-subject' }), false)
+})
+
+test('professional session switch defaults off and cannot turn on in Vercel', () => {
+  assert.equal(
+    isProfessionalSessionAdmissionEnabled({ NODE_ENV: 'development' }),
+    false,
+  )
+  assert.equal(
+    isProfessionalSessionAdmissionEnabled({
+      NODE_ENV: 'development',
+      MARKETPLACE_PROFESSIONAL_SESSION_ENABLED: 'true',
+    }),
+    false,
+  )
+  assert.equal(
+    isProfessionalSessionAdmissionEnabled({
+      NODE_ENV: 'development',
+      MARKETPLACE_PROFESSIONAL_SESSION_ENABLED: 'true',
+      ACCOUNT_RATE_LIMIT_ENABLED: 'true',
+    }),
+    true,
+  )
+  for (const env of [
+    { NODE_ENV: 'production' },
+    { NODE_ENV: 'development', VERCEL_ENV: 'preview' },
+  ]) {
+    assert.equal(
+      isProfessionalSessionAdmissionEnabled({
+        ...env,
+        MARKETPLACE_PROFESSIONAL_SESSION_ENABLED: 'true',
+        ACCOUNT_RATE_LIMIT_ENABLED: 'true',
+      }),
+      false,
+    )
+  }
+})
+
+test('onboarding cannot convert a client unless both local session gates and limiter are ready', () => {
+  const ready = {
+    NODE_ENV: 'development',
+    ACCOUNT_RATE_LIMIT_ENABLED: 'true',
+    MARKETPLACE_CLIENT_SESSION_ENABLED: 'true',
+    MARKETPLACE_PROFESSIONAL_SESSION_ENABLED: 'true',
+  }
+  assert.equal(isProfessionalOnboardingEnabled(ready), true)
+  assert.equal(
+    isProfessionalOnboardingEnabled({
+      ...ready,
+      MARKETPLACE_PROFESSIONAL_SESSION_ENABLED: 'false',
+    }),
+    false,
+  )
+  assert.equal(
+    isProfessionalOnboardingEnabled({
+      ...ready,
+      MARKETPLACE_CLIENT_SESSION_ENABLED: 'false',
+    }),
+    false,
+  )
+  assert.equal(
+    isProfessionalOnboardingEnabled({ ...ready, VERCEL_ENV: 'preview' }),
+    false,
+  )
 })
 
 test('client session switch requires local flag and shared limiter, and cannot turn on in Vercel', () => {
