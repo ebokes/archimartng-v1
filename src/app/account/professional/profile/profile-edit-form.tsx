@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,7 @@ export function ProfessionalProfileEditForm({
     {
       status: 'idle',
       values: initialValues,
+      selectedFields: [],
       attempt: 0,
     } satisfies ProfessionalProfileEditActionState,
   )
@@ -47,6 +48,7 @@ export function ProfessionalProfileEditForm({
       <form
         key={state.attempt}
         action={action}
+        autoComplete="off"
         className="mt-6 space-y-5"
         aria-busy={pending}
       >
@@ -64,36 +66,23 @@ export function ProfessionalProfileEditForm({
           />
           <p className="text-xs text-muted-foreground">20–10,000 characters.</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="professional-website">Portfolio website URL</Label>
-          <Input
-            id="professional-website"
-            name="websiteUrl"
-            type="url"
-            pattern="https://.*"
-            defaultValue={state.values.websiteUrl}
-            maxLength={2048}
-            placeholder="https://example.com"
-            disabled={pending}
-          />
-          <p className="text-xs text-muted-foreground">
-            Use an HTTPS address, or leave blank.
-          </p>
-        </div>
+        <OptionalProfileField
+          field="websiteUrl"
+          label="Portfolio website URL"
+          value={state.values.websiteUrl}
+          selected={state.selectedFields.includes('websiteUrl')}
+          pending={pending}
+        />
         <div className="grid gap-5 sm:grid-cols-3">
           {(['city', 'state', 'country'] as const).map((field) => (
-            <div className="space-y-2" key={field}>
-              <Label htmlFor={`professional-${field}`} className="capitalize">
-                {field}
-              </Label>
-              <Input
-                id={`professional-${field}`}
-                name={field}
-                defaultValue={state.values[field]}
-                maxLength={120}
-                disabled={pending}
-              />
-            </div>
+            <OptionalProfileField
+              key={field}
+              field={field}
+              label={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={state.values[field]}
+              selected={state.selectedFields.includes(field)}
+              pending={pending}
+            />
           ))}
         </div>
         {state.status === 'saved' && (
@@ -123,10 +112,56 @@ export function ProfessionalProfileEditForm({
             We could not save your changes. Please try again later.
           </p>
         )}
+        <p className="text-xs text-muted-foreground">
+          Select Change for any website or location field you want to update.
+          Select it and leave the input blank to clear that field.
+        </p>
         <Button type="submit" disabled={pending}>
           {pending ? 'Saving…' : 'Save profile details'}
         </Button>
       </form>
     </section>
+  )
+}
+
+function OptionalProfileField({
+  field,
+  label,
+  value,
+  selected,
+  pending,
+}: {
+  field: 'websiteUrl' | 'city' | 'state' | 'country'
+  label: string
+  value: string
+  selected: boolean
+  pending: boolean
+}) {
+  const [editing, setEditing] = useState(selected)
+  const id = `professional-${field}`
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        name={field}
+        type={field === 'websiteUrl' ? 'url' : 'text'}
+        pattern={field === 'websiteUrl' ? 'https://.*' : undefined}
+        defaultValue={value}
+        maxLength={field === 'websiteUrl' ? 2048 : 120}
+        placeholder={field === 'websiteUrl' ? 'https://example.com' : undefined}
+        autoComplete="off"
+        disabled={pending || !editing}
+      />
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={editing}
+          onChange={(event) => setEditing(event.target.checked)}
+          disabled={pending}
+        />
+        Change {label.toLowerCase()}
+      </label>
+    </div>
   )
 }

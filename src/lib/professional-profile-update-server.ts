@@ -85,11 +85,7 @@ export const updateOwnProfessionalProfile =
             const [updated] = await tx
               .update(professionals)
               .set({
-                bio: changes.bio,
-                websiteUrl: changes.websiteUrl,
-                city: changes.city,
-                state: changes.state,
-                country: changes.country,
+                ...changes,
                 updatedAt: new Date(),
               })
               .where(eq(professionals.id, profileId))

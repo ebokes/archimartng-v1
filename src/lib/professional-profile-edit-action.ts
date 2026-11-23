@@ -14,6 +14,7 @@ export type ProfessionalProfileFormValues = {
 export type ProfessionalProfileEditActionState = {
   status: 'idle' | 'invalid' | 'saved' | 'denied' | 'unavailable' | 'error'
   values: ProfessionalProfileFormValues
+  selectedFields: Array<'websiteUrl' | 'city' | 'state' | 'country'>
   attempt: number
 }
 
@@ -38,9 +39,14 @@ export function createProfessionalProfileEditAction(dependencies: {
       (key) => key !== '$ACTION_KEY',
     )
     const validKeys =
-      submittedKeys.length === fields.length &&
-      submittedKeys.every((key) => fieldSet.has(key)) &&
-      fields.every((field) => formData.getAll(field).length === 1)
+      formData.getAll('bio').length === 1 &&
+      submittedKeys.every(
+        (key) => fieldSet.has(key) && formData.getAll(key).length === 1,
+      )
+    const selectedFields = fields.filter(
+      (field): field is Exclude<typeof field, 'bio'> =>
+        field !== 'bio' && formData.has(field),
+    )
 
     // Return only known text fields to the form. Bound retained values so an
     // invalid request cannot create an arbitrarily large action response.
@@ -59,24 +65,33 @@ export function createProfessionalProfileEditAction(dependencies: {
     }
     if (
       !validKeys ||
-      fields.some((field) => typeof formData.get(field) !== 'string')
+      fields.some(
+        (field) =>
+          formData.has(field) && typeof formData.get(field) !== 'string',
+      )
     )
-      return { status: 'invalid', values, attempt }
+      return { status: 'invalid', values, selectedFields, attempt }
 
     try {
-      await dependencies.update(values)
-      return { status: 'saved', values, attempt }
+      const changes = Object.fromEntries(
+        fields
+          .filter((field) => formData.has(field))
+          .map((field) => [field, values[field]]),
+      )
+      await dependencies.update(changes)
+      return { status: 'saved', values, selectedFields: [], attempt }
     } catch (error) {
       if (error instanceof ProfessionalProfileEditError) {
         return {
           status: error.code === 'invalid_input' ? 'invalid' : 'denied',
           values,
+          selectedFields,
           attempt,
         }
       }
       if (error instanceof MarketplaceAccountAccessError)
-        return { status: 'denied', values, attempt }
-      return { status: 'error', values, attempt }
+        return { status: 'denied', values, selectedFields, attempt }
+      return { status: 'error', values, selectedFields, attempt }
     }
   }
 }

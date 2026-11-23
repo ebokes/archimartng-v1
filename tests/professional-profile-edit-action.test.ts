@@ -10,6 +10,7 @@ import { ProfessionalProfileEditError } from '../src/lib/professional-profile-ed
 const initial: ProfessionalProfileEditActionState = {
   status: 'idle',
   attempt: 0,
+  selectedFields: [],
   values: {
     bio: 'Existing professional biography.',
     websiteUrl: '',
@@ -25,6 +26,80 @@ function form(changes: Record<string, string> = {}) {
     data.append(key, value)
   return data
 }
+
+function partialForm(changes: Record<string, string>) {
+  const data = new FormData()
+  for (const [key, value] of Object.entries(changes)) data.append(key, value)
+  return data
+}
+
+test('biography-only submission does not send unchanged website or location fields', async () => {
+  let seen: unknown
+  const action = createProfessionalProfileEditAction({
+    enabled: () => true,
+    update: async (changes) => {
+      seen = changes
+    },
+  })
+  const result = await action(
+    initial,
+    partialForm({ bio: 'Updated professional biography.' }),
+  )
+  assert.equal(result.status, 'saved')
+  assert.deepEqual(seen, { bio: 'Updated professional biography.' })
+  assert.deepEqual(result.selectedFields, [])
+  assert.equal(result.values.country, 'Nigeria')
+})
+
+test('explicitly selected empty optional fields clear; omitted fields stay untouched', async () => {
+  let seen: unknown
+  const action = createProfessionalProfileEditAction({
+    enabled: () => true,
+    update: async (changes) => {
+      seen = changes
+    },
+  })
+  const result = await action(
+    initial,
+    partialForm({
+      bio: initial.values.bio,
+      country: '',
+      websiteUrl: '',
+    }),
+  )
+  assert.equal(result.status, 'saved')
+  assert.deepEqual(seen, {
+    bio: initial.values.bio,
+    websiteUrl: '',
+    country: '',
+  })
+  assert.equal('city' in (seen as object), false)
+  assert.equal('state' in (seen as object), false)
+})
+
+test('missing biography and extra fields reject without a write', async () => {
+  let updates = 0
+  const action = createProfessionalProfileEditAction({
+    enabled: () => true,
+    update: async () => {
+      updates++
+    },
+  })
+  assert.equal(
+    (await action(initial, partialForm({ city: 'Lagos' }))).status,
+    'invalid',
+  )
+  assert.equal(
+    (
+      await action(
+        initial,
+        partialForm({ bio: initial.values.bio, role: 'admin' }),
+      )
+    ).status,
+    'invalid',
+  )
+  assert.equal(updates, 0)
+})
 
 test('allowed fields delegate to the trusted update operation without identity fields', async () => {
   for (const field of [
@@ -50,6 +125,7 @@ test('allowed fields delegate to the trusted update operation without identity f
     const result = await action(initial, form({ [field]: value }))
     assert.equal(result.status, 'saved')
     assert.equal(result.values[field], value)
+    assert.deepEqual(result.selectedFields, [])
     assert.deepEqual(seen, [{ ...initial.values, [field]: value }])
     assert.equal('profileId' in (seen[0] as object), false)
   }
@@ -139,6 +215,19 @@ test('validation errors preserve bounded user input for correction', async () =>
   assert.equal(result.values.bio, 'Too short')
   assert.equal(result.values.city, ' Lagos ')
   assert.equal(result.attempt, 1)
+  assert.deepEqual(result.selectedFields, [
+    'websiteUrl',
+    'city',
+    'state',
+    'country',
+  ])
+  const partial = await action(
+    initial,
+    partialForm({ bio: 'Too short', city: ' Lagos ' }),
+  )
+  assert.deepEqual(partial.selectedFields, ['city'])
+  assert.equal(partial.values.city, ' Lagos ')
+  assert.equal(partial.values.country, 'Nigeria')
   const tooLarge = form({ bio: 'x'.repeat(20000) })
   const bounded = await action(initial, tooLarge)
   assert.equal(bounded.values.bio.length, 10001)
