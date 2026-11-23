@@ -57,6 +57,14 @@ export default async function ProfessionalStatusPage() {
           <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
             {content.detail}
           </p>
+          {access.value.approvalStatus === 'approved' && (
+            <Link
+              href="/account/professional/profile"
+              className="mt-6 inline-block rounded-lg border border-border px-5 py-3 text-sm font-semibold"
+            >
+              View your profile
+            </Link>
+          )}
         </section>
       </div>
     </main>
