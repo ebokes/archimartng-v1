@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import { authDb } from '@/db/auth-client'
 import { user } from '@/db/auth-schema'
 import {
@@ -42,7 +42,7 @@ export async function getAdminProfessionalAccounts() {
     .where(
       and(
         eq(marketplaceAccounts.role, 'professional'),
-        inArray(professionalAccounts.approvalStatus, ['pending', 'rejected']),
+        isNull(professionalAccounts.profileId),
       ),
     )
     .orderBy(desc(professionalAccounts.createdAt))
@@ -84,6 +84,7 @@ export async function getAdminProfessionalAccount(accountId: string) {
     .select({
       id: professionalAccountEvents.id,
       eventType: professionalAccountEvents.eventType,
+      profileId: professionalAccountEvents.profileId,
       reason: professionalAccountEvents.reason,
       createdAt: professionalAccountEvents.createdAt,
       actorName: admins.name,

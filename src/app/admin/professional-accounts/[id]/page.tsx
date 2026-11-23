@@ -6,7 +6,15 @@ import {
   getAdminProfessionalAccount,
   isLocalProfessionalAccountReviewEnabled,
 } from '@/lib/admin-professional-accounts'
-import { saveProfessionalAccountReview } from '../actions'
+import {
+  getLinkedClaimApplication,
+  getUnownedProfessionalProfiles,
+} from '@/lib/admin-professional-claims'
+import {
+  saveProfessionalAccountReview,
+  saveProfessionalProfileClaim,
+} from '../actions'
+import { ProfessionalProfileClaimForm } from '../claim-form'
 import { ProfessionalAccountReviewForm } from '../review-form'
 
 export const dynamic = 'force-dynamic'
@@ -42,6 +50,24 @@ export default async function ProfessionalAccountPage({
     account.accountStatus === 'active' &&
     account.emailVerified &&
     account.profileId === null
+  const canClaim = canReview && account.approvalStatus === 'approved'
+  let profiles: Awaited<ReturnType<typeof getUnownedProfessionalProfiles>> = []
+  let application: Awaited<
+    ReturnType<typeof getLinkedClaimApplication>
+  > | null = null
+  if (canClaim) {
+    try {
+      ;[profiles, application] = await Promise.all([
+        getUnownedProfessionalProfiles(),
+        account.applicationId
+          ? getLinkedClaimApplication(account.applicationId)
+          : Promise.resolve(null),
+      ])
+    } catch (error) {
+      if (error instanceof AdminAccessError) redirect('/admin/sign-in')
+      throw error
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background px-5 py-10 text-foreground sm:px-8">
@@ -82,6 +108,16 @@ export default async function ProfessionalAccountPage({
               </Link>
             </p>
           )}
+          {application && (
+            <p>
+              <strong>Linked application evidence:</strong>{' '}
+              {application.applicantName} · {application.specialty} ·{' '}
+              {application.status}
+              {application.professionalId
+                ? ' · Profile association recorded'
+                : ' · No profile association recorded'}
+            </p>
+          )}
           <p>
             <strong>Profile ownership:</strong>{' '}
             {account.profileId ? 'Linked' : 'None'}
@@ -110,6 +146,14 @@ export default async function ProfessionalAccountPage({
                   {event.reason && (
                     <p className="mt-2 whitespace-pre-wrap">{event.reason}</p>
                   )}
+                  {event.profileId && (
+                    <Link
+                      href={`/admin/professionals/${event.profileId}/edit`}
+                      className="mt-2 inline-block underline"
+                    >
+                      Linked profile
+                    </Link>
+                  )}
                 </li>
               ))}
             </ol>
@@ -121,6 +165,27 @@ export default async function ProfessionalAccountPage({
             approvalStatus={account.approvalStatus}
           />
         )}
+        {canClaim &&
+          application?.status !== 'approved' &&
+          account.applicationId && (
+            <p className="mt-8 rounded-xl border border-border p-5 text-sm text-muted-foreground">
+              The linked application must be approved before its profile can be
+              claimed.
+            </p>
+          )}
+        {canClaim &&
+          (!account.applicationId || application?.status === 'approved') && (
+            <ProfessionalProfileClaimForm
+              action={saveProfessionalProfileClaim.bind(null, id)}
+              profiles={
+                application?.professionalId
+                  ? profiles.filter(
+                      (profile) => profile.id === application.professionalId,
+                    )
+                  : profiles
+              }
+            />
+          )}
       </div>
     </main>
   )

@@ -35,12 +35,12 @@ export default async function ProfessionalAccountsPage() {
           Professional account review
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Pending and rejected accounts. This queue is separate from public
-          professional applications and profiles.
+          Accounts without a linked profile. Review pending decisions or open an
+          approved account to assess an existing profile claim.
         </p>
         {accounts.length === 0 ? (
           <p className="mt-8 rounded-xl border border-dashed border-border p-8 text-sm text-muted-foreground">
-            No accounts awaiting review.
+            No unlinked professional accounts.
           </p>
         ) : (
           <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
