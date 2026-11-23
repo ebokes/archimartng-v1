@@ -15,7 +15,7 @@ import {
 } from './marketplace-account-status-boundary'
 import { requireAdmin } from './require-admin'
 
-// Unmounted until migration 0005 is approved and applied to development.
+// Mounted only behind the explicit local-development status-management gate.
 export const changeAdminMarketplaceAccountStatus =
   createMarketplaceAccountStatusBoundary({
     async requireAdministrator() {

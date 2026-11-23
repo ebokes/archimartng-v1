@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { AdminAccessError } from '@/lib/admin-authorization'
 import { getAdminDashboard } from '@/lib/admin-dashboard'
 import { isLocalProfessionalAccountReviewEnabled } from '@/lib/admin-professional-accounts'
+import { isLocalAccountStatusManagementEnabled } from '@/lib/admin-marketplace-accounts'
 import { SignOutButton } from './sign-out-button'
 
 export const dynamic = 'force-dynamic'
@@ -160,6 +161,14 @@ export default async function AdminPage() {
               className="ml-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
             >
               Review professional accounts →
+            </Link>
+          )}
+          {isLocalAccountStatusManagementEnabled() && (
+            <Link
+              href="/admin/marketplace-accounts"
+              className="ml-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+            >
+              Manage marketplace accounts →
             </Link>
           )}
         </div>
