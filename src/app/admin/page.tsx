@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AdminAccessError } from '@/lib/admin-authorization'
 import { getAdminDashboard } from '@/lib/admin-dashboard'
+import { isLocalProfessionalAccountReviewEnabled } from '@/lib/admin-professional-accounts'
 import { SignOutButton } from './sign-out-button'
 
 export const dynamic = 'force-dynamic'
@@ -153,6 +154,14 @@ export default async function AdminPage() {
           >
             Review applications →
           </Link>
+          {isLocalProfessionalAccountReviewEnabled() && (
+            <Link
+              href="/admin/professional-accounts"
+              className="ml-3 inline-flex rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+            >
+              Review professional accounts →
+            </Link>
+          )}
         </div>
 
         <div className="mt-12 grid gap-10 xl:grid-cols-2">
