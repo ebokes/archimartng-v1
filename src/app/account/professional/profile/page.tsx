@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { ClientSignOutButton } from '@/app/account/sign-out-button'
 import { MarketplaceAccountAccessError } from '@/lib/marketplace-account-authorization'
 import { getOwnProfessionalProfile } from '@/lib/own-professional-profile'
+import { ProfessionalProfileEditForm } from './profile-edit-form'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -113,8 +114,17 @@ export default async function OwnProfessionalProfilePage() {
               </div>
               <p className="text-sm text-muted-foreground">
                 Profile publication and verification remain administrator
-                decisions. This page is read-only.
+                decisions.
               </p>
+              <ProfessionalProfileEditForm
+                initialValues={{
+                  bio: profile.bio,
+                  websiteUrl: profile.websiteUrl ?? '',
+                  city: profile.city ?? '',
+                  state: profile.state ?? '',
+                  country: profile.country ?? '',
+                }}
+              />
             </div>
           )}
         </section>
