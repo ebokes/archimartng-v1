@@ -428,6 +428,44 @@ export const professionalAccountEvents = pgTable(
   ],
 )
 
+// Status history is account-wide: clients must not depend on the
+// professional-only event table for suspension and restoration evidence.
+export const marketplaceAccountEvents = pgTable(
+  'marketplace_account_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => marketplaceAccounts.id, { onDelete: 'restrict' }),
+    actorAdminId: uuid('actor_admin_id')
+      .notNull()
+      .references(() => admins.id, { onDelete: 'restrict' }),
+    action: text('action').notNull(),
+    reason: text('reason').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('marketplace_account_events_account_created_idx').on(
+      table.accountId,
+      table.createdAt,
+    ),
+    index('marketplace_account_events_admin_created_idx').on(
+      table.actorAdminId,
+      table.createdAt,
+    ),
+    check(
+      'marketplace_account_events_action_valid',
+      sql`${table.action} IN ('account_suspended', 'account_restored')`,
+    ),
+    check(
+      'marketplace_account_events_reason_nonblank',
+      sql`length(btrim(${table.reason})) > 0`,
+    ),
+  ],
+)
+
 export const accountRateLimits = pgTable(
   'account_rate_limits',
   {
